@@ -16,6 +16,7 @@ namespace ithappy.Animals_FREE
         [SerializeField] private float m_FirePower = 30f;
         [SerializeField] private float m_MuzzleOffset = 0.35f;
         [SerializeField] private float m_BulletLifeTime = 5f;
+        [SerializeField] private PlayerStatus m_PlayerStatus;
         private Collider m_OwnerCollider;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureSceneDogShooter()
@@ -36,6 +37,10 @@ namespace ithappy.Animals_FREE
         private void Awake()
         {
             m_OwnerCollider = GetComponent<Collider>();
+            if (m_PlayerStatus == null)
+            {
+                m_PlayerStatus = GetComponent<PlayerStatus>();
+            }
 
             if (m_BulletPrefab == null)
             {
@@ -66,6 +71,11 @@ namespace ithappy.Animals_FREE
         {
             if (WasFirePressed())
             {
+                if (DialogueManager.Instance != null && DialogueManager.Instance.IsTalking())
+                {
+                    return;
+                }
+
                 Fire();
             }
         }
@@ -101,6 +111,11 @@ namespace ithappy.Animals_FREE
             EnsureFireTransform();
 
             if (m_BulletPrefab == null || m_FireTransform == null) return;
+
+            if (m_PlayerStatus != null && !m_PlayerStatus.UseAmmo())
+            {
+                return;
+            }
 
             var fireRotation = m_FireTransform.rotation;
             var firePosition = m_FireTransform.position + m_FireTransform.forward * m_MuzzleOffset;
@@ -139,3 +154,4 @@ namespace ithappy.Animals_FREE
         }
     }
 }
+
