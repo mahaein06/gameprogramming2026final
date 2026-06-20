@@ -1089,18 +1089,12 @@ AnimationClip:
       m_PostInfinity: 2
       m_RotationOrder: 4
     path: Tiger_001_rig/Root/spine.007/spine.008/spine.009/shoulder.L/front_thigh.L/front_shin.L/front_foot.L
-  m_CompressedRotationCurves:
-  []
-  m_EulerCurves:
-  []
-  m_PositionCurves:
-  []
-  m_ScaleCurves:
-  []
-  m_FloatCurves:
-  []
-  m_PPtrCurves:
-  []
+  m_CompressedRotationCurves: []
+  m_EulerCurves: []
+  m_PositionCurves: []
+  m_ScaleCurves: []
+  m_FloatCurves: []
+  m_PPtrCurves: []
   m_SampleRate: 30
   m_WrapMode: 2
   m_Bounds:
