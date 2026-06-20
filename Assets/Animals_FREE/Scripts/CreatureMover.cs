@@ -18,6 +18,8 @@ namespace ithappy.Animals_FREE
         [SerializeField]
         private Space m_Space = Space.Self;
         [SerializeField]
+        private bool m_FaceMovementDirection = false;
+        [SerializeField]
         private float m_JumpHeight = 5f;
 
         [Header("Animator")]
@@ -50,7 +52,7 @@ namespace ithappy.Animals_FREE
             m_WalkSpeed = Mathf.Max(m_WalkSpeed, 0f);
             m_RunSpeed = Mathf.Max(m_RunSpeed, m_WalkSpeed);
 
-            m_Movement?.SetStats(m_WalkSpeed / 3.6f, m_RunSpeed / 3.6f, m_RotateSpeed, m_JumpHeight, m_Space);
+            m_Movement?.SetStats(m_WalkSpeed / 3.6f, m_RunSpeed / 3.6f, m_RotateSpeed, m_JumpHeight, m_Space, m_FaceMovementDirection);
         }
 
         private void Awake()
@@ -91,7 +93,7 @@ namespace ithappy.Animals_FREE
 
             if (m_Movement == null)
             {
-                m_Movement = new MovementHandler(m_Controller, m_Transform, m_WalkSpeed, m_RunSpeed, m_RotateSpeed, m_JumpHeight, m_Space);
+                m_Movement = new MovementHandler(m_Controller, m_Transform, m_WalkSpeed, m_RunSpeed, m_RotateSpeed, m_JumpHeight, m_Space, m_FaceMovementDirection);
             }
 
             if (m_Animation == null)
@@ -167,13 +169,14 @@ namespace ithappy.Animals_FREE
             private float m_RotateSpeed;
 
             private Space m_Space;
+            private bool m_FaceMovementDirection;
 
             private Vector3 m_Normal;
             private Vector3 m_GravityAcelleration = Physics.gravity;
 
             private float m_jumpTimer;
 
-            public MovementHandler(CharacterController controller, Transform transform, float walkSpeed, float runSpeed, float rotateSpeed, float jumpHeight, Space space)
+            public MovementHandler(CharacterController controller, Transform transform, float walkSpeed, float runSpeed, float rotateSpeed, float jumpHeight, Space space, bool faceMovementDirection)
             {
                 m_Controller = controller;
                 m_Transform = transform;
@@ -183,15 +186,17 @@ namespace ithappy.Animals_FREE
                 m_RotateSpeed = rotateSpeed;
 
                 m_Space = space;
+                m_FaceMovementDirection = faceMovementDirection;
             }
 
-            public void SetStats(float walkSpeed, float runSpeed, float rotateSpeed, float jumpHeight, Space space)
+            public void SetStats(float walkSpeed, float runSpeed, float rotateSpeed, float jumpHeight, Space space, bool faceMovementDirection)
             {
                 m_WalkSpeed = walkSpeed;
                 m_RunSpeed = runSpeed;
                 m_RotateSpeed = rotateSpeed;
 
                 m_Space = space;
+                m_FaceMovementDirection = faceMovementDirection;
             }
 
             public void SetSurface(in Vector3 normal)
@@ -214,7 +219,10 @@ namespace ithappy.Animals_FREE
                 ConvertMovement(in axis, in cameraLook, out var movement);
 
                 CaculateGravity(deltaTime, out isAir);
-                FaceMovementDirection(deltaTime, in movement);
+                if (m_FaceMovementDirection)
+                {
+                    FaceMovementDirection(deltaTime, in movement);
+                }
                 Displace(deltaTime, in movement, isRun);
 
                 GenAnimationAxis(in movement, out animAxis);

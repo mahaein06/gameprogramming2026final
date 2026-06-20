@@ -15,7 +15,7 @@ namespace ithappy.Animals_FREE
         [SerializeField]
         private KeyCode m_RunKey = KeyCode.LeftShift;
         [SerializeField]
-        private bool m_RotateCharacterWithMouse = true;
+        private bool m_RotateCharacterWithMouse = false;
         [SerializeField]
         private float m_MouseTurnSensitivity = 3.6f;
 
@@ -28,6 +28,8 @@ namespace ithappy.Animals_FREE
         private string m_MouseY = "Mouse Y";
         [SerializeField]
         private string m_MouseScroll = "Mouse ScrollWheel";
+        [SerializeField]
+        private bool m_LockCursor = true;
 
         private CreatureMover m_Mover;
 
@@ -44,6 +46,30 @@ namespace ithappy.Animals_FREE
             m_Mover = GetComponent<CreatureMover>();
         }
 
+        private void Start()
+        {
+            ApplyCursorLock();
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+            {
+                ApplyCursorLock();
+            }
+        }
+
+        private void ApplyCursorLock()
+        {
+            if (!m_LockCursor)
+            {
+                return;
+            }
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
         private void Update()
         {
             GatherInput();
@@ -57,7 +83,7 @@ namespace ithappy.Animals_FREE
             m_IsJump = Input.GetButton(m_JumpButton);
 
             m_Target = (m_Camera == null) ? Vector3.zero : m_Camera.Target;
-            m_MouseDelta = new Vector2(Input.GetAxis(m_MouseX), -Input.GetAxis(m_MouseY));
+            m_MouseDelta = new Vector2(Input.GetAxis(m_MouseX), 0f);
             m_Scroll = Input.GetAxis(m_MouseScroll);
 
             if (m_RotateCharacterWithMouse && Mathf.Abs(m_MouseDelta.x) > 0.0001f)
