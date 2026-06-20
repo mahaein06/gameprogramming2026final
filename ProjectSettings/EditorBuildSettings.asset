@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/SampleScene.unity
+    guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/TitleScene.unity
+    guid: a7a63941b8be1b6488ed067ea29327f2
+  - enabled: 1
+    path: Assets/Scenes/CharacterSelectScene.unity
+    guid: 8b9b3cdaeedf4cb49b131ff8bb2d0011
+  - enabled: 1
+    path: Assets/Scenes/MainScene/DeerScene.unity
+    guid: 05fe965c8fa3a1e4caadccc22fb68815
+  - enabled: 1
+    path: Assets/Scenes/MainScene/HorseScene.unity
+    guid: ee42e90c0f0c4f64ca5a7a5e1a4339be
+  - enabled: 1
+    path: Assets/Scenes/MainScene/PenguinScene.unity
+    guid: 1177a69191ca1704a9f33a792c9729a3
+  - enabled: 1
+    path: Assets/Scenes/MainScene/DogScene.unity
+    guid: bed3b3accc1559e4bbd7f99c32903f8e
+  - enabled: 1
+    path: Assets/Scenes/MainScene/TigerScene.unity
+    guid: ddc4a68fe26303c4bba1121f10cc993e
+  - enabled: 1
+    path: Assets/Scenes/MainScene.unity
+    guid: 2ee217c327a18d64a845f9ee9ef00cf8
+  m_configObjects:
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

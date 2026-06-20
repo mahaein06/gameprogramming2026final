@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2b00cc6b599014042bdd1010baa0624a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 308637
+  packageName: Rocket Launcher Game Asset
+  packageVersion: 1.0
+  assetPath: Assets/Marpa Studio/Built-In/Materials/Bullet.mat
+  uploadId: 726120
