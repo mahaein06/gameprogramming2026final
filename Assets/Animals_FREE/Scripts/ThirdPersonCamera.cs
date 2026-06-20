@@ -53,9 +53,8 @@ namespace ithappy.Animals_FREE
 
             if (m_UseSceneCameraPose && m_Player != null)
             {
-                var yaw = Quaternion.AngleAxis(m_Angles.y, Vector3.up);
-                m_TargetPos = m_Player.TransformPoint(yaw * m_LocalCameraOffset);
-                m_LookPoint = m_Player.TransformPoint(yaw * m_LocalLookPoint);
+                m_TargetPos = m_Player.TransformPoint(m_LocalCameraOffset);
+                m_LookPoint = m_Player.TransformPoint(m_LocalLookPoint);
                 return;
             }
 

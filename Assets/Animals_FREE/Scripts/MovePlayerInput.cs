@@ -15,7 +15,7 @@ namespace ithappy.Animals_FREE
         [SerializeField]
         private KeyCode m_RunKey = KeyCode.LeftShift;
         [SerializeField]
-        private bool m_RotateCharacterWithMouse = false;
+        private bool m_RotateCharacterWithMouse = true;
         [SerializeField]
         private float m_MouseTurnSensitivity = 3.6f;
 

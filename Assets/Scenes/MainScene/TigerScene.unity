@@ -1727,7 +1727,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -0.0006163991
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 5883155896844355917, guid: 8741cd6c8b9fc3947999191d0c381f50, type: 3}
+      propertyPath: m_RotateCharacterWithMouse
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5883155896844355917, guid: 8741cd6c8b9fc3947999191d0c381f50, type: 3}
+      propertyPath: m_MouseTurnSensitivity
+      value: 3.6
+      objectReference: {fileID: 0}    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 6269405532505082904, guid: 8741cd6c8b9fc3947999191d0c381f50, type: 3}

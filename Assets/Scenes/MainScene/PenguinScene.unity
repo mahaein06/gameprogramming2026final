@@ -588,7 +588,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: tail
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 2197702747431416006, guid: 66f01a8db88f9644baed659d1f91cdca, type: 3}
+      propertyPath: m_RotateCharacterWithMouse
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2197702747431416006, guid: 66f01a8db88f9644baed659d1f91cdca, type: 3}
+      propertyPath: m_MouseTurnSensitivity
+      value: 3.6
+      objectReference: {fileID: 0}    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 6074164916685695540, guid: 66f01a8db88f9644baed659d1f91cdca, type: 3}
