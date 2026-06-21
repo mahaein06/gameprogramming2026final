@@ -22,8 +22,8 @@ namespace ithappy.Animals_FREE
         [SerializeField, Range(0f, 70f)] private float m_MaxAimPitch = 45f;
         public Transform firePosition;
         private Collider m_OwnerCollider;
-        private Quaternion m_FireRotationOffset = Quaternion.identity;
-        private bool m_HasFireRotationOffset;
+        private Quaternion m_StartFireLocalRotation = Quaternion.identity;
+        private bool m_HasStartFireLocalRotation;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureSceneDogShooter()
@@ -60,7 +60,7 @@ namespace ithappy.Animals_FREE
             }
 
             EnsureFireTransform();
-            CacheFireRotationOffset();
+            CacheStartFireLocalRotation();
         }
 
         private void LateUpdate()
@@ -135,42 +135,34 @@ namespace ithappy.Animals_FREE
             if (!m_MatchFireTransformToCamera) return;
 
             EnsureFireTransform();
-            CacheFireRotationOffset();
+            CacheStartFireLocalRotation();
 
-            if (m_FireTransform == null || !m_HasFireRotationOffset) return;
+            if (m_FireTransform == null || !m_HasStartFireLocalRotation) return;
 
-            Vector3 aimDirection = GetCameraPitchDirection();
-            if (aimDirection.sqrMagnitude < 0.0001f) return;
-
-            Quaternion aimRotation = Quaternion.LookRotation(aimDirection, transform.up);
-            m_FireTransform.rotation = aimRotation * m_FireRotationOffset;
+            float pitch = GetCameraPitch();
+            m_FireTransform.localRotation = m_StartFireLocalRotation * Quaternion.Euler(pitch, 0f, 0f);
         }
 
-        private void CacheFireRotationOffset()
+        private void CacheStartFireLocalRotation()
         {
-            if (m_HasFireRotationOffset || m_FireTransform == null) return;
+            if (m_HasStartFireLocalRotation || m_FireTransform == null) return;
 
-            Quaternion flatDogRotation = Quaternion.LookRotation(transform.forward, transform.up);
-            m_FireRotationOffset = Quaternion.Inverse(flatDogRotation) * m_FireTransform.rotation;
-            m_HasFireRotationOffset = true;
+            m_StartFireLocalRotation = m_FireTransform.localRotation;
+            m_HasStartFireLocalRotation = true;
         }
 
-        private Vector3 GetCameraPitchDirection()
+        private float GetCameraPitch()
         {
             Camera mainCamera = Camera.main;
             if (mainCamera == null)
             {
-                return transform.forward;
+                return 0f;
             }
 
             Vector3 localCameraForward = transform.InverseTransformDirection(mainCamera.transform.forward);
             float horizontalMagnitude = new Vector2(localCameraForward.x, localCameraForward.z).magnitude;
             float pitch = Mathf.Atan2(localCameraForward.y, Mathf.Max(horizontalMagnitude, 0.0001f)) * Mathf.Rad2Deg;
-            pitch = Mathf.Clamp(pitch, m_MinAimPitch, m_MaxAimPitch);
-
-            float pitchRadians = pitch * Mathf.Deg2Rad;
-            Vector3 localAim = new Vector3(0f, Mathf.Sin(pitchRadians), Mathf.Cos(pitchRadians));
-            return transform.TransformDirection(localAim).normalized;
+            return Mathf.Clamp(pitch, m_MinAimPitch, m_MaxAimPitch);
         }
 
         private void Fire()
