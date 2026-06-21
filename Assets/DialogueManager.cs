@@ -143,7 +143,10 @@ public class DialogueManager : MonoBehaviour
             nameText.text = animal.animalName;
         }
 
-        SetDialogueText(FirstLine);
+        if (dialogueText == null || string.IsNullOrWhiteSpace(dialogueText.text))
+        {
+            SetDialogueText(FirstLine);
+        }
 
         if (!hasChoices)
         {
@@ -201,7 +204,10 @@ public class DialogueManager : MonoBehaviour
         waitingForChoice = false;
         canCloseWithClick = true;
         SetActiveSafe(choicePanel, false);
-        SetDialogueText(AfterChoiceLine);
+        if (dialogueText == null || string.IsNullOrWhiteSpace(dialogueText.text))
+        {
+            SetDialogueText(AfterChoiceLine);
+        }
     }
 
     private void PrepareWorldPrompt()
