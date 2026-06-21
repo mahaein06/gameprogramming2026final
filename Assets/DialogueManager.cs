@@ -132,15 +132,15 @@ public class DialogueManager : MonoBehaviour
         SetActiveSafe(dialoguePanel, true);
         SetActiveSafe(choicePanel, hasChoices);
 
-        if (portraitImage != null)
+        if (portraitImage != null && animal.portrait != null)
         {
             portraitImage.sprite = animal.portrait;
-            portraitImage.enabled = animal.portrait != null;
+            portraitImage.enabled = true;
         }
 
-        if (nameText != null)
+        if (nameText != null && !string.IsNullOrEmpty(animal.animalName))
         {
-            nameText.text = string.IsNullOrEmpty(animal.animalName) ? "Chicken" : animal.animalName;
+            nameText.text = animal.animalName;
         }
 
         SetDialogueText(FirstLine);
