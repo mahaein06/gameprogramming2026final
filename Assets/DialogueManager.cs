@@ -24,13 +24,14 @@ public class DialogueManager : MonoBehaviour
 
     private const string FirstLine = "- 뭐야?";
     private const string AfterChoiceLine = "- 형씨, 우리도 먹고 살기 바쁘다고. 이번만이야.";
+    private const float WorldPromptScale = 0.01f;
 
     private AnimalDialogue currentAnimal;
     private bool isTalking;
     private bool waitingForChoice;
     private bool canCloseWithClick;
     private RectTransform fPromptRect;
-    private Canvas fPromptCanvas;
+    private Canvas fPromptWorldCanvas;
 
     private void Awake()
     {
@@ -40,7 +41,7 @@ public class DialogueManager : MonoBehaviour
         }
 
         Instance = this;
-        CachePromptReferences();
+        PrepareWorldPrompt();
 
         SetActiveSafe(fPrompt, false);
         SetActiveSafe(dialoguePanel, false);
@@ -67,10 +68,13 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
+    private void LateUpdate()
+    {
+        UpdatePromptWorldPose();
+    }
+
     private void Update()
     {
-        UpdatePromptPosition();
-
         if (!isTalking)
         {
             if (currentAnimal != null && WasInteractPressed())
@@ -103,7 +107,7 @@ public class DialogueManager : MonoBehaviour
         if (!isTalking)
         {
             SetActiveSafe(fPrompt, true);
-            UpdatePromptPosition();
+            UpdatePromptWorldPose();
         }
     }
 
@@ -162,7 +166,7 @@ public class DialogueManager : MonoBehaviour
         if (currentAnimal != null)
         {
             SetActiveSafe(fPrompt, true);
-            UpdatePromptPosition();
+            UpdatePromptWorldPose();
         }
     }
 
@@ -202,21 +206,43 @@ public class DialogueManager : MonoBehaviour
         SetDialogueText(AfterChoiceLine);
     }
 
-    private void CachePromptReferences()
+    private void PrepareWorldPrompt()
     {
         if (fPrompt == null) return;
 
         fPromptRect = fPrompt.GetComponent<RectTransform>();
-        fPromptCanvas = fPrompt.GetComponentInParent<Canvas>();
+        if (fPromptRect == null)
+        {
+            fPromptRect = fPrompt.AddComponent<RectTransform>();
+        }
+
+        fPromptWorldCanvas = fPrompt.GetComponent<Canvas>();
+        if (fPromptWorldCanvas == null)
+        {
+            fPromptWorldCanvas = fPrompt.AddComponent<Canvas>();
+        }
+
+        fPromptWorldCanvas.renderMode = RenderMode.WorldSpace;
+        fPromptWorldCanvas.overrideSorting = true;
+        fPromptWorldCanvas.sortingOrder = 500;
+
+        fPromptRect.localScale = Vector3.one * WorldPromptScale;
+        fPromptRect.pivot = new Vector2(0.5f, 0.5f);
+        fPromptRect.anchorMin = new Vector2(0.5f, 0.5f);
+        fPromptRect.anchorMax = new Vector2(0.5f, 0.5f);
+        if (fPromptRect.sizeDelta == Vector2.zero)
+        {
+            fPromptRect.sizeDelta = new Vector2(200f, 50f);
+        }
     }
 
-    private void UpdatePromptPosition()
+    private void UpdatePromptWorldPose()
     {
         if (fPrompt == null || currentAnimal == null || isTalking) return;
 
-        if (fPromptRect == null || fPromptCanvas == null)
+        if (fPromptRect == null || fPromptWorldCanvas == null)
         {
-            CachePromptReferences();
+            PrepareWorldPrompt();
         }
 
         Camera cameraToUse = Camera.main;
@@ -226,25 +252,15 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
-        Vector3 screenPosition = cameraToUse.WorldToScreenPoint(currentAnimal.GetPromptWorldPosition());
-        bool isInFrontOfCamera = screenPosition.z > 0f;
-        SetActiveSafe(fPrompt, isInFrontOfCamera);
+        Vector3 promptPosition = currentAnimal.GetPromptWorldPosition();
+        Vector3 viewportPosition = cameraToUse.WorldToViewportPoint(promptPosition);
+        bool isVisible = viewportPosition.z > 0f;
+        SetActiveSafe(fPrompt, isVisible);
+        if (!isVisible) return;
 
-        if (!isInFrontOfCamera || fPromptRect == null) return;
-
-        if (fPromptCanvas != null && fPromptCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
-        {
-            RectTransform canvasRect = fPromptCanvas.transform as RectTransform;
-            Camera canvasCamera = fPromptCanvas.worldCamera != null ? fPromptCanvas.worldCamera : cameraToUse;
-            if (canvasRect != null && RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPosition, canvasCamera, out Vector2 localPosition))
-            {
-                fPromptRect.anchoredPosition = localPosition;
-            }
-        }
-        else
-        {
-            fPromptRect.position = screenPosition;
-        }
+        fPrompt.transform.position = promptPosition;
+        fPrompt.transform.rotation = cameraToUse.transform.rotation;
+        fPrompt.transform.localScale = Vector3.one * WorldPromptScale;
     }
 
     private static bool WasInteractPressed()
