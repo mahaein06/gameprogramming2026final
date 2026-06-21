@@ -1770,7 +1770,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AnimalDialogue
   animalName: 
   portrait: {fileID: 0}
-  promptOffset: {x: 0, y: 1.2, z: 0}
+  promptOffset: {x: 0, y: 0.7, z: 0}
 --- !u!135 &801173299
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -3769,8 +3769,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 14
-  m_fontSizeBase: 14
+  m_fontSize: 16
+  m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -8729,4 +8729,5 @@ SceneRoots:
   - {fileID: 419170886}
   - {fileID: 17909216}
   - {fileID: 1761210768}
+
 
