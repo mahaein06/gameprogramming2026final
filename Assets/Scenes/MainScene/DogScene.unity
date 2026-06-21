@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -1770,7 +1770,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AnimalDialogue
   animalName: 
   portrait: {fileID: 0}
-  promptOffset: {x: 0, y: 1.8, z: 0}
+  promptOffset: {x: 0, y: 1.2, z: 0}
 --- !u!135 &801173299
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -3769,8 +3769,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 14
+  m_fontSizeBase: 14
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -8729,3 +8729,4 @@ SceneRoots:
   - {fileID: 419170886}
   - {fileID: 17909216}
   - {fileID: 1761210768}
+

@@ -24,7 +24,7 @@ public class DialogueManager : MonoBehaviour
 
     private const string FirstLine = "- 뭐야?";
     private const string AfterChoiceLine = "- 형씨, 우리도 먹고 살기 바쁘다고. 이번만이야.";
-    private const float WorldPromptScale = 0.01f;
+    private const float WorldPromptScale = 0.005f;
 
     private AnimalDialogue currentAnimal;
     private bool isTalking;
@@ -301,3 +301,4 @@ public class DialogueManager : MonoBehaviour
         }
     }
 }
+
