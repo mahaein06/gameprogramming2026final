@@ -1,9 +1,14 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class PlayerStatus : MonoBehaviour
 {
+    private const int BulletDamage = 10;
+    private const string BulletTag = "Bullet";
+    private const string EndingSceneName = "EndingScene";
+
     [Header("HP")]
     public int maxHP = 100;
     public int currentHP = 100;
@@ -57,6 +62,11 @@ public class PlayerStatus : MonoBehaviour
 
         currentHP = Mathf.Max(0, currentHP - damage);
         UpdateHPUI();
+
+        if (currentHP <= 0)
+        {
+            SceneManager.LoadScene(EndingSceneName);
+        }
     }
 
     public void HealFull()
@@ -93,6 +103,7 @@ public class PlayerStatus : MonoBehaviour
 
         hpSlider.minValue = 0;
         hpSlider.maxValue = maxHP;
+        hpSlider.direction = Slider.Direction.LeftToRight;
         hpSlider.value = currentHP;
     }
 
@@ -104,6 +115,14 @@ public class PlayerStatus : MonoBehaviour
         }
 
         ammoText.text = currentAmmo + "/" + maxAmmo;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!other.CompareTag(BulletTag)) return;
+
+        TakeDamage(BulletDamage);
+        Destroy(other.gameObject);
     }
 }
 

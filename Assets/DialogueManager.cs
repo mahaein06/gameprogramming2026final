@@ -97,7 +97,22 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
-        if (waitingForChoice) return;
+        if (waitingForChoice)
+        {
+            if (WasHealChoicePressed())
+            {
+                OnHealSelected();
+                return;
+            }
+
+            if (WasReloadChoicePressed())
+            {
+                OnReloadSelected();
+                return;
+            }
+
+            return;
+        }
 
         if (canCloseWithClick && WasLeftClickPressed())
         {
@@ -222,10 +237,7 @@ public class DialogueManager : MonoBehaviour
 
     private void ContinueAfterChoice()
     {
-        waitingForChoice = false;
-        canCloseWithClick = true;
-        SetActiveSafe(choicePanel, false);
-        SetDialogueText(AfterChoiceLine);
+        EndDialogue();
     }
 
     private void EnsureChoiceUI()
@@ -584,6 +596,36 @@ public class DialogueManager : MonoBehaviour
         return pressed;
 #elif ENABLE_LEGACY_INPUT_MANAGER
         return Input.GetMouseButtonDown(0);
+#else
+        return false;
+#endif
+    }
+
+    private static bool WasHealChoicePressed()
+    {
+#if ENABLE_INPUT_SYSTEM
+        bool pressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
+#if ENABLE_LEGACY_INPUT_MANAGER
+        pressed = pressed || Input.GetKeyDown(KeyCode.E);
+#endif
+        return pressed;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        return Input.GetKeyDown(KeyCode.E);
+#else
+        return false;
+#endif
+    }
+
+    private static bool WasReloadChoicePressed()
+    {
+#if ENABLE_INPUT_SYSTEM
+        bool pressed = Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame;
+#if ENABLE_LEGACY_INPUT_MANAGER
+        pressed = pressed || Input.GetKeyDown(KeyCode.R);
+#endif
+        return pressed;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        return Input.GetKeyDown(KeyCode.R);
 #else
         return false;
 #endif
