@@ -22,14 +22,15 @@ public class DialogueManager : MonoBehaviour
     [Header("Player")]
     public PlayerStatus playerStatus;
 
-    private const string FirstLine = "- ππæﬂ?";
-    private const string AfterChoiceLine = "- «¸ææ, øÏ∏Æµµ ∏‘∞Ì ªÏ±‚ πŸª⁄¥Ÿ∞Ì. ¿Ãπ¯∏∏¿Ãæﬂ.";
+    private const string FirstLine = "- Ëê∏Î®ØÎπû?";
+    private const string AfterChoiceLine = "- ?Î∫§Îµ™, ?Í≥ï‚îÅ??ÁôíÎ∞¥ÌÄ¨ ?ÎãøÎ¶∞ Ë´õÎ∂øÍ±Ø?„Ö∫ÌÄ¨. ?ÎåÄÏæ≤ÔßçÎöØÏî†??";
     private const float WorldPromptScale = 0.005f;
 
     private AnimalDialogue currentAnimal;
     private bool isTalking;
     private bool waitingForChoice;
     private bool canCloseWithClick;
+    private bool promptCanInteract;
     private RectTransform fPromptRect;
     private Canvas fPromptWorldCanvas;
 
@@ -41,7 +42,9 @@ public class DialogueManager : MonoBehaviour
         }
 
         Instance = this;
+        AutoAssignMissingReferences();
         PrepareWorldPrompt();
+        CreateMissingChoiceUI();
 
         SetActiveSafe(fPrompt, false);
         SetActiveSafe(dialoguePanel, false);
@@ -77,7 +80,7 @@ public class DialogueManager : MonoBehaviour
     {
         if (!isTalking)
         {
-            if (currentAnimal != null && WasInteractPressed())
+            if (currentAnimal != null && promptCanInteract && fPrompt != null && fPrompt.activeInHierarchy && WasInteractPressed())
             {
                 StartDialogue(currentAnimal);
             }
@@ -116,6 +119,7 @@ public class DialogueManager : MonoBehaviour
         if (currentAnimal != animal) return;
 
         currentAnimal = null;
+        promptCanInteract = false;
         SetActiveSafe(fPrompt, false);
     }
 
@@ -127,6 +131,7 @@ public class DialogueManager : MonoBehaviour
         isTalking = true;
         waitingForChoice = true;
         canCloseWithClick = false;
+        promptCanInteract = false;
 
         SetActiveSafe(fPrompt, false);
         SetActiveSafe(dialoguePanel, true);
@@ -254,6 +259,7 @@ public class DialogueManager : MonoBehaviour
         if (cameraToUse == null)
         {
             SetActiveSafe(fPrompt, false);
+            promptCanInteract = false;
             return;
         }
 
@@ -261,6 +267,7 @@ public class DialogueManager : MonoBehaviour
         Vector3 viewportPosition = cameraToUse.WorldToViewportPoint(promptPosition);
         bool isVisible = viewportPosition.z > 0f;
         SetActiveSafe(fPrompt, isVisible);
+        promptCanInteract = isVisible;
         if (!isVisible) return;
 
         fPrompt.transform.position = promptPosition;
@@ -279,21 +286,171 @@ public class DialogueManager : MonoBehaviour
         return Quaternion.LookRotation(directionToCamera, Vector3.up);
     }
 
+    private void AutoAssignMissingReferences()
+    {
+        if (playerStatus == null)
+        {
+            playerStatus = FindAnyObjectByType<PlayerStatus>();
+        }
+
+        if (dialoguePanel == null)
+        {
+            GameObject foundDialoguePanel = GameObject.Find("DialoguePanel");
+            if (foundDialoguePanel != null)
+            {
+                dialoguePanel = foundDialoguePanel;
+            }
+        }
+
+        if (fPrompt == null)
+        {
+            GameObject foundPrompt = GameObject.Find("FPrompText");
+            if (foundPrompt == null)
+            {
+                foundPrompt = GameObject.Find("FPromptText");
+            }
+
+            if (foundPrompt != null)
+            {
+                fPrompt = foundPrompt;
+            }
+        }
+
+        if (dialoguePanel == null) return;
+
+        if (portraitImage == null)
+        {
+            Transform portrait = dialoguePanel.transform.Find("PortraitImage");
+            if (portrait != null)
+            {
+                portraitImage = portrait.GetComponent<Image>();
+            }
+        }
+
+        if (nameText == null)
+        {
+            Transform name = dialoguePanel.transform.Find("NameText");
+            if (name != null)
+            {
+                nameText = name.GetComponent<TMP_Text>();
+            }
+        }
+
+        if (dialogueText == null)
+        {
+            Transform text = dialoguePanel.transform.Find("DialogueText");
+            if (text != null)
+            {
+                dialogueText = text.GetComponent<TMP_Text>();
+            }
+        }
+    }
+
+    private void CreateMissingChoiceUI()
+    {
+        if (dialoguePanel == null) return;
+
+        if (choicePanel == null)
+        {
+            Transform existingChoicePanel = dialoguePanel.transform.Find("ChoicePanel");
+            if (existingChoicePanel != null)
+            {
+                choicePanel = existingChoicePanel.gameObject;
+            }
+            else
+            {
+                choicePanel = new GameObject("ChoicePanel", typeof(RectTransform));
+                choicePanel.transform.SetParent(dialoguePanel.transform, false);
+                RectTransform rect = choicePanel.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(0.5f, 0f);
+                rect.anchorMax = new Vector2(0.5f, 0f);
+                rect.pivot = new Vector2(0.5f, 0f);
+                rect.anchoredPosition = new Vector2(0f, 20f);
+                rect.sizeDelta = new Vector2(420f, 60f);
+            }
+        }
+
+        if (healButton == null)
+        {
+            healButton = GetOrCreateChoiceButton("HealButton", "Ôß£ÎåÄÏ†∞ Áï∞‚ëπÏüæ?ÏÑçÎ¶∞", new Vector2(-110f, 0f));
+        }
+
+        if (reloadButton == null)
+        {
+            reloadButton = GetOrCreateChoiceButton("ReloadButton", "Áè•ÏïπÎ∏£ ?ŒºÏüæ?ÏÑçÎ¶∞", new Vector2(110f, 0f));
+        }
+    }
+
+    private Button GetOrCreateChoiceButton(string objectName, string label, Vector2 anchoredPosition)
+    {
+        Transform existing = choicePanel.transform.Find(objectName);
+        if (existing != null)
+        {
+            Button existingButton = existing.GetComponent<Button>();
+            if (existingButton != null)
+            {
+                return existingButton;
+            }
+        }
+
+        GameObject buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
+        buttonObject.transform.SetParent(choicePanel.transform, false);
+
+        RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.pivot = new Vector2(0.5f, 0.5f);
+        buttonRect.anchoredPosition = anchoredPosition;
+        buttonRect.sizeDelta = new Vector2(200f, 44f);
+
+        Image image = buttonObject.GetComponent<Image>();
+        image.color = new Color(1f, 1f, 1f, 0.9f);
+
+        GameObject textObject = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        textObject.transform.SetParent(buttonObject.transform, false);
+
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+
+        TMP_Text buttonText = textObject.GetComponent<TMP_Text>();
+        buttonText.text = label;
+        buttonText.fontSize = 20f;
+        buttonText.alignment = TextAlignmentOptions.Center;
+        buttonText.color = Color.black;
+
+        return buttonObject.GetComponent<Button>();
+    }
+
     private static bool WasInteractPressed()
     {
 #if ENABLE_INPUT_SYSTEM
-        return Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame;
-#else
+        bool pressed = Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame;
+#if ENABLE_LEGACY_INPUT_MANAGER
+        pressed = pressed || Input.GetKeyDown(KeyCode.F);
+#endif
+        return pressed;
+#elif ENABLE_LEGACY_INPUT_MANAGER
         return Input.GetKeyDown(KeyCode.F);
+#else
+        return false;
 #endif
     }
 
     private static bool WasLeftClickPressed()
     {
 #if ENABLE_INPUT_SYSTEM
-        return Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
-#else
+        bool pressed = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+#if ENABLE_LEGACY_INPUT_MANAGER
+        pressed = pressed || Input.GetMouseButtonDown(0);
+#endif
+        return pressed;
+#elif ENABLE_LEGACY_INPUT_MANAGER
         return Input.GetMouseButtonDown(0);
+#else
+        return false;
 #endif
     }
 
@@ -317,5 +474,3 @@ public class DialogueManager : MonoBehaviour
         }
     }
 }
-
-
