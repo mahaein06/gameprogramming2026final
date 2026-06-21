@@ -83,7 +83,7 @@ namespace ithappy.Animals_FREE
             m_IsJump = Input.GetButton(m_JumpButton);
 
             m_Target = (m_Camera == null) ? Vector3.zero : m_Camera.Target;
-            m_MouseDelta = new Vector2(Input.GetAxis(m_MouseX), 0f);
+            m_MouseDelta = new Vector2(Input.GetAxis(m_MouseX), Input.GetAxis(m_MouseY));
             m_Scroll = Input.GetAxis(m_MouseScroll);
 
             if (m_RotateCharacterWithMouse && Mathf.Abs(m_MouseDelta.x) > 0.0001f)

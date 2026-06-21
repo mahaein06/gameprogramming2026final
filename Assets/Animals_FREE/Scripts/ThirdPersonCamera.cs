@@ -53,11 +53,13 @@ namespace ithappy.Animals_FREE
 
             if (m_UseSceneCameraPose && m_Player != null)
             {
-                m_TargetPos = m_Player.TransformPoint(m_LocalCameraOffset);
+                var pitch = Quaternion.AngleAxis(m_Angles.x, Vector3.right);
+                var pitchedCameraOffset = m_LocalLookPoint + pitch * (m_LocalCameraOffset - m_LocalLookPoint);
+
+                m_TargetPos = m_Player.TransformPoint(pitchedCameraOffset);
                 m_LookPoint = m_Player.TransformPoint(m_LocalLookPoint);
                 return;
             }
-
             var dir = new Vector3(0, 0, -m_Distance);
             var rot = Quaternion.Euler(m_Angles.x, m_Angles.y, 0f);
 
