@@ -38,6 +38,7 @@ public class DialogueManager : MonoBehaviour
     private bool waitingForChoiceReveal;
     private bool canCloseWithClick;
     private bool promptCanInteract;
+    private bool waitForClickRelease;
     private RectTransform fPromptRect;
     private Canvas fPromptWorldCanvas;
 
@@ -89,6 +90,12 @@ public class DialogueManager : MonoBehaviour
 
     private void Update()
     {
+        if (waitForClickRelease)
+        {
+            if (IsLeftClickHeld()) return;
+            waitForClickRelease = false;
+        }
+
         if (!isTalking)
         {
             if (currentAnimal != null && promptCanInteract && WasInteractPressed())
@@ -181,7 +188,7 @@ public class DialogueManager : MonoBehaviour
 
         SetActiveSafe(fPrompt, false);
         SetActiveSafe(dialoguePanel, true);
-        SetActiveSafe(choicePanel, false);
+        SetChoicesVisible(false);
 
         if (portraitImage != null && animal.portrait != null)
         {
@@ -209,9 +216,10 @@ public class DialogueManager : MonoBehaviour
         waitingForChoiceLine = false;
         waitingForChoiceReveal = false;
         canCloseWithClick = false;
+        waitForClickRelease = false;
 
         SetActiveSafe(dialoguePanel, false);
-        SetActiveSafe(choicePanel, false);
+        SetChoicesVisible(false);
 
         if (currentAnimal != null)
         {
@@ -268,7 +276,8 @@ public class DialogueManager : MonoBehaviour
         canCloseWithClick = !hasChoices;
 
         SetDialogueText(ChoiceLine);
-        SetActiveSafe(choicePanel, false);
+        SetChoicesVisible(false);
+        waitForClickRelease = true;
 
         if (!hasChoices)
         {
@@ -284,7 +293,7 @@ public class DialogueManager : MonoBehaviour
         waitingForChoice = hasChoices;
         canCloseWithClick = !hasChoices;
 
-        SetActiveSafe(choicePanel, hasChoices);
+        SetChoicesVisible(hasChoices);
 
         if (!hasChoices)
         {
@@ -350,6 +359,21 @@ public class DialogueManager : MonoBehaviour
         if (createdReloadButton)
         {
             ApplyChoiceTextStyle(reloadButton, "\uCD1D\uC54C \uC7A5\uC804\uD558\uAE30");
+        }
+    }
+
+    private void SetChoicesVisible(bool visible)
+    {
+        SetActiveSafe(choicePanel, visible);
+
+        if (healButton != null)
+        {
+            SetActiveSafe(healButton.gameObject, visible);
+        }
+
+        if (reloadButton != null)
+        {
+            SetActiveSafe(reloadButton.gameObject, visible);
         }
     }
 
@@ -648,6 +672,21 @@ public class DialogueManager : MonoBehaviour
         return pressed;
 #elif ENABLE_LEGACY_INPUT_MANAGER
         return Input.GetMouseButtonDown(0);
+#else
+        return false;
+#endif
+    }
+
+    private static bool IsLeftClickHeld()
+    {
+#if ENABLE_INPUT_SYSTEM
+        bool held = Mouse.current != null && Mouse.current.leftButton.isPressed;
+#if ENABLE_LEGACY_INPUT_MANAGER
+        held = held || Input.GetMouseButton(0);
+#endif
+        return held;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        return Input.GetMouseButton(0);
 #else
         return false;
 #endif
