@@ -17,8 +17,11 @@ namespace ithappy.Animals_FREE
         [SerializeField] private float m_MuzzleOffset = 0.12f;
         [SerializeField] private float m_BulletLifeTime = 5f;
         [SerializeField] private PlayerStatus m_PlayerStatus;
+        [SerializeField] private bool m_MatchFireTransformToBulletAngle = true;
         public Transform firePosition;
         private Collider m_OwnerCollider;
+        private Quaternion m_FireRotationOffset = Quaternion.identity;
+        private bool m_HasFireRotationOffset;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureSceneDogShooter()
@@ -55,6 +58,12 @@ namespace ithappy.Animals_FREE
             }
 
             EnsureFireTransform();
+            CacheFireRotationOffset();
+        }
+
+        private void LateUpdate()
+        {
+            AlignFireTransformToBulletAngle();
         }
 
         private static GameObject LoadBulletPrefab()
@@ -113,6 +122,37 @@ namespace ithappy.Animals_FREE
             }
 
             m_FireTransform = firePosition;
+        }
+
+        private void AlignFireTransformToBulletAngle()
+        {
+            if (!m_MatchFireTransformToBulletAngle) return;
+
+            EnsureFireTransform();
+            CacheFireRotationOffset();
+
+            if (m_FireTransform == null || !m_HasFireRotationOffset) return;
+
+            Vector3 fireDirection = GetFireDirection();
+            if (fireDirection.sqrMagnitude < 0.0001f) return;
+
+            Quaternion bulletAngle = Quaternion.LookRotation(fireDirection, Vector3.up);
+            m_FireTransform.rotation = bulletAngle * m_FireRotationOffset;
+        }
+
+        private void CacheFireRotationOffset()
+        {
+            if (m_HasFireRotationOffset || m_FireTransform == null) return;
+
+            Vector3 fireDirection = GetFireDirection();
+            if (fireDirection.sqrMagnitude < 0.0001f)
+            {
+                fireDirection = transform.forward;
+            }
+
+            Quaternion bulletAngle = Quaternion.LookRotation(fireDirection, Vector3.up);
+            m_FireRotationOffset = Quaternion.Inverse(bulletAngle) * m_FireTransform.rotation;
+            m_HasFireRotationOffset = true;
         }
 
         private void Fire()
