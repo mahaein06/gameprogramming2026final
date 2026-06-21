@@ -42,15 +42,7 @@ namespace ithappy.Animals_FREE
         {
             m_OwnerCollider = GetComponent<Collider>();
 
-            if (m_PlayerStatus == null)
-            {
-                m_PlayerStatus = GetComponent<PlayerStatus>();
-            }
-
-            if (m_PlayerStatus == null)
-            {
-                m_PlayerStatus = FindAnyObjectByType<PlayerStatus>();
-            }
+            EnsurePlayerStatus();
 
             if (m_BulletPrefab == null)
             {
@@ -100,6 +92,19 @@ namespace ithappy.Animals_FREE
 #else
             return false;
 #endif
+        }
+
+        private void EnsurePlayerStatus()
+        {
+            if (m_PlayerStatus != null) return;
+
+            m_PlayerStatus = GetComponent<PlayerStatus>();
+            if (m_PlayerStatus != null) return;
+
+            m_PlayerStatus = FindAnyObjectByType<PlayerStatus>();
+            if (m_PlayerStatus != null) return;
+
+            m_PlayerStatus = gameObject.AddComponent<PlayerStatus>();
         }
 
         private void EnsureFireTransform()
@@ -166,12 +171,8 @@ namespace ithappy.Animals_FREE
 
             if (m_BulletPrefab == null || m_FireTransform == null) return;
 
-            if (m_PlayerStatus == null)
-            {
-                m_PlayerStatus = FindAnyObjectByType<PlayerStatus>();
-            }
-
-            if (m_PlayerStatus != null && !m_PlayerStatus.UseAmmo())
+            EnsurePlayerStatus();
+            if (m_PlayerStatus == null || !m_PlayerStatus.UseAmmo())
             {
                 return;
             }

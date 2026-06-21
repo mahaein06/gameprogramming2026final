@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,6 +16,7 @@ public class PlayerStatus : MonoBehaviour
 
     private void Awake()
     {
+        AutoBindUI();
         currentHP = Mathf.Clamp(currentHP, 0, maxHP);
         currentAmmo = Mathf.Clamp(currentAmmo, 0, maxAmmo);
         UpdateHPUI();
@@ -24,8 +25,30 @@ public class PlayerStatus : MonoBehaviour
 
     private void Start()
     {
+        AutoBindUI();
         UpdateHPUI();
         UpdateAmmoUI();
+    }
+
+    private void AutoBindUI()
+    {
+        if (hpSlider == null)
+        {
+            GameObject hpObject = GameObject.Find("HPBar");
+            if (hpObject != null)
+            {
+                hpSlider = hpObject.GetComponent<Slider>();
+            }
+        }
+
+        if (ammoText == null)
+        {
+            GameObject ammoObject = GameObject.Find("AmmoText");
+            if (ammoObject != null)
+            {
+                ammoText = ammoObject.GetComponent<TMP_Text>();
+            }
+        }
     }
 
     public void TakeDamage(int damage)
