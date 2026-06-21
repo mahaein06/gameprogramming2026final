@@ -25,6 +25,8 @@ public class DialogueManager : MonoBehaviour
     private const string FirstLine = "\u002D \uBB50\uC57C?";
     private const string AfterChoiceLine = "\u002D \uD615\uC528, \uC6B0\uB9AC\uB3C4 \uBA39\uACE0 \uC0B4\uAE30 \uBC14\uC058\uB2E4\uACE0. \uC774\uBC88\uB9CC\uC774\uC57C.";
     private const float WorldPromptScale = 0.005f;
+    private const float ChoicePanelY = 170f;
+    private const float ChoiceFontSize = 22f;
 
     private AnimalDialogue currentAnimal;
     private bool isTalking;
@@ -216,6 +218,8 @@ public class DialogueManager : MonoBehaviour
 
         if (choicePanel == null) return;
 
+        ApplyChoicePanelLayout();
+
         if (healButton == null)
         {
             healButton = FindDeepChildComponent<Button>(choicePanel.transform, "HealButton");
@@ -233,6 +237,9 @@ public class DialogueManager : MonoBehaviour
                 reloadButton = CreateChoiceButton(choicePanel.transform, "ReloadButton", "\uCD1D\uC54C \uC7A5\uC804\uD558\uAE30");
             }
         }
+
+        ApplyChoiceTextStyle(healButton, "\uCCB4\uB825 \uCDA9\uC804\uD558\uAE30");
+        ApplyChoiceTextStyle(reloadButton, "\uCD1D\uC54C \uC7A5\uC804\uD558\uAE30");
     }
 
     private void BindChoiceButtons()
@@ -250,7 +257,35 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
-    private static GameObject CreateChoicePanel(Transform parent)
+    private void ApplyChoicePanelLayout()
+    {
+        RectTransform rect = choicePanel.GetComponent<RectTransform>();
+        if (rect == null)
+        {
+            rect = choicePanel.AddComponent<RectTransform>();
+        }
+
+        rect.anchorMin = new Vector2(0.5f, 0f);
+        rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(0f, ChoicePanelY);
+        rect.sizeDelta = new Vector2(360f, 70f);
+
+        VerticalLayoutGroup layout = choicePanel.GetComponent<VerticalLayoutGroup>();
+        if (layout == null)
+        {
+            layout = choicePanel.AddComponent<VerticalLayoutGroup>();
+        }
+
+        layout.spacing = 4f;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+    }
+
+    private GameObject CreateChoicePanel(Transform parent)
     {
         GameObject panel = new GameObject("ChoicePanel", typeof(RectTransform));
         panel.transform.SetParent(parent, false);
@@ -258,12 +293,12 @@ public class DialogueManager : MonoBehaviour
         RectTransform rect = panel.GetComponent<RectTransform>();
         rect.anchorMin = new Vector2(0.5f, 0f);
         rect.anchorMax = new Vector2(0.5f, 0f);
-        rect.pivot = new Vector2(0.5f, 0f);
-        rect.anchoredPosition = new Vector2(0f, 95f);
-        rect.sizeDelta = new Vector2(360f, 96f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(0f, ChoicePanelY);
+        rect.sizeDelta = new Vector2(360f, 70f);
 
         VerticalLayoutGroup layout = panel.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 10f;
+        layout.spacing = 4f;
         layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childControlWidth = true;
         layout.childControlHeight = true;
@@ -273,16 +308,16 @@ public class DialogueManager : MonoBehaviour
         return panel;
     }
 
-    private static Button CreateChoiceButton(Transform parent, string objectName, string label)
+    private Button CreateChoiceButton(Transform parent, string objectName, string label)
     {
         GameObject buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(parent, false);
 
         RectTransform rect = buttonObject.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(340f, 40f);
+        rect.sizeDelta = new Vector2(340f, 28f);
 
         Image image = buttonObject.GetComponent<Image>();
-        image.color = new Color(0f, 0f, 0f, 0.65f);
+        image.color = new Color(1f, 1f, 1f, 0f);
 
         Button button = buttonObject.GetComponent<Button>();
 
@@ -292,17 +327,56 @@ public class DialogueManager : MonoBehaviour
         RectTransform textRect = textObject.GetComponent<RectTransform>();
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
+        textRect.offsetMin = new Vector2(0f, -16f);
+        textRect.offsetMax = new Vector2(0f, 16f);
 
         TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+        ApplyChoiceTextStyle(text, label);
+
+        return button;
+    }
+
+    private void ApplyChoiceTextStyle(Button button, string label)
+    {
+        if (button == null) return;
+
+        Image image = button.GetComponent<Image>();
+        if (image != null)
+        {
+            image.color = new Color(1f, 1f, 1f, 0f);
+        }
+
+        TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+        if (text != null)
+        {
+            ApplyChoiceTextStyle(text, label);
+        }
+    }
+
+    private void ApplyChoiceTextStyle(TMP_Text text, string label)
+    {
+        if (text == null) return;
+
         text.text = label;
-        text.fontSize = 22f;
+        text.fontSize = ChoiceFontSize;
         text.alignment = TextAlignmentOptions.Center;
         text.color = Color.white;
         text.raycastTarget = false;
 
-        return button;
+        TMP_FontAsset sourceFont = dialogueText != null && dialogueText.font != null ? dialogueText.font : nameText != null ? nameText.font : null;
+        if (sourceFont != null)
+        {
+            text.font = sourceFont;
+        }
+
+        RectTransform rect = text.GetComponent<RectTransform>();
+        if (rect != null)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(0f, -16f);
+            rect.offsetMax = new Vector2(0f, 16f);
+        }
     }
 
     private void PrepareWorldPrompt()
