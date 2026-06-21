@@ -17,7 +17,7 @@ namespace ithappy.Animals_FREE
         [SerializeField] private float m_MuzzleOffset = 0.12f;
         [SerializeField] private float m_BulletLifeTime = 5f;
         [SerializeField] private PlayerStatus m_PlayerStatus;
-
+        public Transform firePosition;
         private Collider m_OwnerCollider;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -111,6 +111,8 @@ namespace ithappy.Animals_FREE
             {
                 m_FireTransform = fireObject.transform;
             }
+
+            m_FireTransform = firePosition;
         }
 
         private void Fire()
@@ -223,7 +225,7 @@ namespace ithappy.Animals_FREE
     {
         private void OnCollisionEnter(Collision other)
         {
-            Destroy(gameObject);
+            //Destroy(gameObject);
         }
     }
 }
