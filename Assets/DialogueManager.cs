@@ -42,7 +42,7 @@ public class DialogueManager : MonoBehaviour
         }
 
         Instance = this;
-        AutoAssignExistingReferences();
+        AssignOnlyMissingNonUiReferences();
         KeepManagerOutsideDialoguePanel();
         PrepareWorldPrompt();
 
@@ -287,69 +287,14 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
-    private void AutoAssignExistingReferences()
+    private void AssignOnlyMissingNonUiReferences()
     {
         if (playerStatus == null)
         {
             playerStatus = FindAnyObjectByType<PlayerStatus>();
         }
-
-        if (dialoguePanel == null)
-        {
-            GameObject foundDialoguePanel = FindGameObjectIncludingInactive("DialoguePanel");
-            if (foundDialoguePanel != null)
-            {
-                dialoguePanel = foundDialoguePanel;
-            }
-        }
-
-        if (fPrompt == null)
-        {
-            GameObject foundPrompt = FindGameObjectIncludingInactive("FPrompText");
-            if (foundPrompt == null)
-            {
-                foundPrompt = FindGameObjectIncludingInactive("FPromptText");
-            }
-
-            if (foundPrompt != null)
-            {
-                fPrompt = foundPrompt;
-            }
-        }
-
-        if (dialoguePanel == null) return;
-
-        portraitImage ??= FindDeepChildComponent<Image>(dialoguePanel.transform, "PortraitImage");
-        nameText ??= FindDeepChildComponent<TMP_Text>(dialoguePanel.transform, "NameText");
-        dialogueText ??= FindDeepChildComponent<TMP_Text>(dialoguePanel.transform, "DialogueText");
-
-        if (choicePanel == null)
-        {
-            Transform foundChoicePanel = FindDeepChild(dialoguePanel.transform, "ChoicePanel");
-            if (foundChoicePanel != null)
-            {
-                choicePanel = foundChoicePanel.gameObject;
-            }
-        }
-
-        healButton ??= FindDeepChildComponent<Button>(dialoguePanel.transform, "HealButton");
-        reloadButton ??= FindDeepChildComponent<Button>(dialoguePanel.transform, "ReloadButton");
     }
 
-
-    private static GameObject FindGameObjectIncludingInactive(string objectName)
-    {
-        Transform[] transforms = Resources.FindObjectsOfTypeAll<Transform>();
-        foreach (Transform found in transforms)
-        {
-            if (found.name == objectName && found.gameObject.scene.IsValid())
-            {
-                return found.gameObject;
-            }
-        }
-
-        return null;
-    }
     private static T FindDeepChildComponent<T>(Transform parent, string childName) where T : Component
     {
         Transform child = FindDeepChild(parent, childName);
