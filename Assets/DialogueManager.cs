@@ -44,23 +44,14 @@ public class DialogueManager : MonoBehaviour
         Instance = this;
         AssignOnlyMissingNonUiReferences();
         KeepManagerOutsideDialoguePanel();
+        EnsureChoiceUI();
         PrepareWorldPrompt();
 
         SetActiveSafe(fPrompt, false);
         SetActiveSafe(dialoguePanel, false);
         SetActiveSafe(choicePanel, false);
 
-        if (healButton != null)
-        {
-            healButton.onClick.RemoveListener(OnHealSelected);
-            healButton.onClick.AddListener(OnHealSelected);
-        }
-
-        if (reloadButton != null)
-        {
-            reloadButton.onClick.RemoveListener(OnReloadSelected);
-            reloadButton.onClick.AddListener(OnReloadSelected);
-        }
+        BindChoiceButtons();
     }
 
     private void LateUpdate()
@@ -124,6 +115,9 @@ public class DialogueManager : MonoBehaviour
         isTalking = true;
         promptCanInteract = false;
 
+        EnsureChoiceUI();
+        BindChoiceButtons();
+
         bool hasChoices = choicePanel != null && healButton != null && reloadButton != null;
         waitingForChoice = hasChoices;
         canCloseWithClick = !hasChoices;
@@ -138,15 +132,12 @@ public class DialogueManager : MonoBehaviour
             portraitImage.enabled = true;
         }
 
-        if (nameText != null && !string.IsNullOrEmpty(animal.animalName))
+        if (nameText != null)
         {
-            nameText.text = animal.animalName;
+            nameText.text = string.IsNullOrWhiteSpace(animal.animalName) ? "Chicken" : animal.animalName;
         }
 
-        if (dialogueText == null || string.IsNullOrWhiteSpace(dialogueText.text))
-        {
-            SetDialogueText(FirstLine);
-        }
+        SetDialogueText(FirstLine);
 
         if (!hasChoices)
         {
@@ -173,6 +164,8 @@ public class DialogueManager : MonoBehaviour
 
     private void OnHealSelected()
     {
+        AssignOnlyMissingNonUiReferences();
+
         if (playerStatus != null)
         {
             playerStatus.HealFull();
@@ -187,6 +180,8 @@ public class DialogueManager : MonoBehaviour
 
     private void OnReloadSelected()
     {
+        AssignOnlyMissingNonUiReferences();
+
         if (playerStatus != null)
         {
             playerStatus.ReloadFull();
@@ -204,10 +199,110 @@ public class DialogueManager : MonoBehaviour
         waitingForChoice = false;
         canCloseWithClick = true;
         SetActiveSafe(choicePanel, false);
-        if (dialogueText == null || string.IsNullOrWhiteSpace(dialogueText.text))
+        SetDialogueText(AfterChoiceLine);
+    }
+
+    private void EnsureChoiceUI()
+    {
+        if (dialoguePanel == null) return;
+
+        Transform panelTransform = dialoguePanel.transform;
+
+        if (choicePanel == null)
         {
-            SetDialogueText(AfterChoiceLine);
+            Transform existingChoicePanel = FindDeepChild(panelTransform, "ChoicePanel");
+            choicePanel = existingChoicePanel != null ? existingChoicePanel.gameObject : CreateChoicePanel(panelTransform);
         }
+
+        if (choicePanel == null) return;
+
+        if (healButton == null)
+        {
+            healButton = FindDeepChildComponent<Button>(choicePanel.transform, "HealButton");
+            if (healButton == null)
+            {
+                healButton = CreateChoiceButton(choicePanel.transform, "HealButton", "\uCCB4\uB825 \uCDA9\uC804\uD558\uAE30");
+            }
+        }
+
+        if (reloadButton == null)
+        {
+            reloadButton = FindDeepChildComponent<Button>(choicePanel.transform, "ReloadButton");
+            if (reloadButton == null)
+            {
+                reloadButton = CreateChoiceButton(choicePanel.transform, "ReloadButton", "\uCD1D\uC54C \uC7A5\uC804\uD558\uAE30");
+            }
+        }
+    }
+
+    private void BindChoiceButtons()
+    {
+        if (healButton != null)
+        {
+            healButton.onClick.RemoveListener(OnHealSelected);
+            healButton.onClick.AddListener(OnHealSelected);
+        }
+
+        if (reloadButton != null)
+        {
+            reloadButton.onClick.RemoveListener(OnReloadSelected);
+            reloadButton.onClick.AddListener(OnReloadSelected);
+        }
+    }
+
+    private static GameObject CreateChoicePanel(Transform parent)
+    {
+        GameObject panel = new GameObject("ChoicePanel", typeof(RectTransform));
+        panel.transform.SetParent(parent, false);
+
+        RectTransform rect = panel.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0f);
+        rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.anchoredPosition = new Vector2(0f, 95f);
+        rect.sizeDelta = new Vector2(360f, 96f);
+
+        VerticalLayoutGroup layout = panel.AddComponent<VerticalLayoutGroup>();
+        layout.spacing = 10f;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+
+        return panel;
+    }
+
+    private static Button CreateChoiceButton(Transform parent, string objectName, string label)
+    {
+        GameObject buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
+        buttonObject.transform.SetParent(parent, false);
+
+        RectTransform rect = buttonObject.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(340f, 40f);
+
+        Image image = buttonObject.GetComponent<Image>();
+        image.color = new Color(0f, 0f, 0f, 0.65f);
+
+        Button button = buttonObject.GetComponent<Button>();
+
+        GameObject textObject = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
+        textObject.transform.SetParent(buttonObject.transform, false);
+
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+        text.text = label;
+        text.fontSize = 22f;
+        text.alignment = TextAlignmentOptions.Center;
+        text.color = Color.white;
+        text.raycastTarget = false;
+
+        return button;
     }
 
     private void PrepareWorldPrompt()
