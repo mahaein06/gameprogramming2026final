@@ -210,6 +210,11 @@ public class DialogueManager : MonoBehaviour
     {
         if (fPrompt == null) return;
 
+        if (fPrompt.transform.parent != null)
+        {
+            fPrompt.transform.SetParent(null, false);
+        }
+
         fPromptRect = fPrompt.GetComponent<RectTransform>();
         if (fPromptRect == null)
         {
@@ -301,4 +306,5 @@ public class DialogueManager : MonoBehaviour
         }
     }
 }
+
 
