@@ -35,6 +35,7 @@ public class DialogueManager : MonoBehaviour
     private bool isTalking;
     private bool waitingForChoice;
     private bool waitingForChoiceLine;
+    private bool waitingForChoiceReveal;
     private bool canCloseWithClick;
     private bool promptCanInteract;
     private RectTransform fPromptRect;
@@ -121,6 +122,12 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
+        if (waitingForChoiceReveal && WasLeftClickPressed())
+        {
+            ShowChoices();
+            return;
+        }
+
         if (canCloseWithClick && WasLeftClickPressed())
         {
             EndDialogue();
@@ -169,6 +176,7 @@ public class DialogueManager : MonoBehaviour
         bool hasChoices = choicePanel != null && healButton != null && reloadButton != null;
         waitingForChoice = false;
         waitingForChoiceLine = true;
+        waitingForChoiceReveal = false;
         canCloseWithClick = !hasChoices;
 
         SetActiveSafe(fPrompt, false);
@@ -199,6 +207,7 @@ public class DialogueManager : MonoBehaviour
         isTalking = false;
         waitingForChoice = false;
         waitingForChoiceLine = false;
+        waitingForChoiceReveal = false;
         canCloseWithClick = false;
 
         SetActiveSafe(dialoguePanel, false);
@@ -254,10 +263,27 @@ public class DialogueManager : MonoBehaviour
         bool hasChoices = choicePanel != null && healButton != null && reloadButton != null;
 
         waitingForChoiceLine = false;
-        waitingForChoice = hasChoices;
+        waitingForChoiceReveal = hasChoices;
+        waitingForChoice = false;
         canCloseWithClick = !hasChoices;
 
         SetDialogueText(ChoiceLine);
+        SetActiveSafe(choicePanel, false);
+
+        if (!hasChoices)
+        {
+            Debug.LogWarning("DialogueManager: ChoicePanel/HealButton/ReloadButton are not assigned. Existing DialoguePanel will show without choices.", this);
+        }
+    }
+
+    private void ShowChoices()
+    {
+        bool hasChoices = choicePanel != null && healButton != null && reloadButton != null;
+
+        waitingForChoiceReveal = false;
+        waitingForChoice = hasChoices;
+        canCloseWithClick = !hasChoices;
+
         SetActiveSafe(choicePanel, hasChoices);
 
         if (!hasChoices)
