@@ -1,4 +1,4 @@
-ï»¿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 #if ENABLE_INPUT_SYSTEM
@@ -22,8 +22,8 @@ public class DialogueManager : MonoBehaviour
     [Header("Player")]
     public PlayerStatus playerStatus;
 
-    private const string FirstLine = "- ë­ì•¼?";
-    private const string AfterChoiceLine = "- í˜•ì”¨, ìš°ë¦¬ë„ ë¨¹ê³  ì‚´ê¸° ë°”ì˜ë‹¤ê³ . ì´ë²ˆë§Œì´ì•¼.";
+    private const string FirstLine = "- ¹¹¾ß?";
+    private const string AfterChoiceLine = "- Çü¾¾, ¿ì¸®µµ ¸Ô°í »ì±â ¹Ù»Ú´Ù°í. ÀÌ¹ø¸¸ÀÌ¾ß.";
     private const float WorldPromptScale = 0.005f;
 
     private AnimalDialogue currentAnimal;
@@ -264,8 +264,19 @@ public class DialogueManager : MonoBehaviour
         if (!isVisible) return;
 
         fPrompt.transform.position = promptPosition;
-        fPrompt.transform.rotation = cameraToUse.transform.rotation;
+        fPrompt.transform.rotation = GetUprightBillboardRotation(cameraToUse, promptPosition);
         fPrompt.transform.localScale = Vector3.one * WorldPromptScale;
+    }
+
+    private static Quaternion GetUprightBillboardRotation(Camera cameraToUse, Vector3 promptPosition)
+    {
+        Vector3 directionToCamera = promptPosition - cameraToUse.transform.position;
+        if (directionToCamera.sqrMagnitude < 0.0001f)
+        {
+            return Quaternion.identity;
+        }
+
+        return Quaternion.LookRotation(directionToCamera, Vector3.up);
     }
 
     private static bool WasInteractPressed()
