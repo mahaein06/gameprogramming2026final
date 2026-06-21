@@ -42,6 +42,11 @@ namespace ithappy.Animals_FREE
                 m_PlayerStatus = GetComponent<PlayerStatus>();
             }
 
+            if (m_PlayerStatus == null)
+            {
+                m_PlayerStatus = FindAnyObjectByType<PlayerStatus>();
+            }
+
             if (m_BulletPrefab == null)
             {
                 m_BulletPrefab = LoadBulletPrefab();
@@ -112,6 +117,11 @@ namespace ithappy.Animals_FREE
 
             if (m_BulletPrefab == null || m_FireTransform == null) return;
 
+            if (m_PlayerStatus == null)
+            {
+                m_PlayerStatus = FindAnyObjectByType<PlayerStatus>();
+            }
+
             if (m_PlayerStatus != null && !m_PlayerStatus.UseAmmo())
             {
                 return;
@@ -154,4 +164,6 @@ namespace ithappy.Animals_FREE
         }
     }
 }
+
+
 

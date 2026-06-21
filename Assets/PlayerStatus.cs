@@ -65,7 +65,6 @@ public class PlayerStatus : MonoBehaviour
     {
         if (hpSlider == null)
         {
-            Debug.LogWarning("PlayerStatus: HP Slider is not assigned.", this);
             return;
         }
 
@@ -78,10 +77,10 @@ public class PlayerStatus : MonoBehaviour
     {
         if (ammoText == null)
         {
-            Debug.LogWarning("PlayerStatus: Ammo Text is not assigned.", this);
             return;
         }
 
         ammoText.text = currentAmmo + "/" + maxAmmo;
     }
 }
+
