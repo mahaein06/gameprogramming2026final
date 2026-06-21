@@ -22,8 +22,8 @@ public class DialogueManager : MonoBehaviour
     [Header("Player")]
     public PlayerStatus playerStatus;
 
-    private const string FirstLine = "- 萸먯빞?";
-    private const string AfterChoiceLine = "- ?뺤뵪, ?곕━??癒밴퀬 ?닿린 諛붿걯?ㅺ퀬. ?대쾲留뚯씠??";
+    private const string FirstLine = "- ?몃Ŋ鍮?";
+    private const string AfterChoiceLine = "- ?類ㅻ뎁, ?怨뺚봺???믩객????용┛ 獄쏅뗄嫄??블? ??苡뀐쭕??뵠??";
     private const float WorldPromptScale = 0.005f;
 
     private AnimalDialogue currentAnimal;
@@ -43,6 +43,7 @@ public class DialogueManager : MonoBehaviour
 
         Instance = this;
         AutoAssignMissingReferences();
+        KeepManagerOutsideDialoguePanel();
         PrepareWorldPrompt();
         CreateMissingChoiceUI();
 
@@ -286,6 +287,14 @@ public class DialogueManager : MonoBehaviour
         return Quaternion.LookRotation(directionToCamera, Vector3.up);
     }
 
+    private void KeepManagerOutsideDialoguePanel()
+    {
+        if (dialoguePanel != null && transform.IsChildOf(dialoguePanel.transform))
+        {
+            transform.SetParent(null, true);
+        }
+    }
+
     private void AutoAssignMissingReferences()
     {
         if (playerStatus == null)
@@ -372,12 +381,12 @@ public class DialogueManager : MonoBehaviour
 
         if (healButton == null)
         {
-            healButton = GetOrCreateChoiceButton("HealButton", "泥대젰 異⑹쟾?섍린", new Vector2(-110f, 0f));
+            healButton = GetOrCreateChoiceButton("HealButton", "筌ｋ????겸뫗???띾┛", new Vector2(-110f, 0f));
         }
 
         if (reloadButton == null)
         {
-            reloadButton = GetOrCreateChoiceButton("ReloadButton", "珥앹븣 ?μ쟾?섍린", new Vector2(110f, 0f));
+            reloadButton = GetOrCreateChoiceButton("ReloadButton", "?μ빘釉??關???띾┛", new Vector2(110f, 0f));
         }
     }
 

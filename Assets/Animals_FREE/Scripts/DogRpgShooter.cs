@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -14,14 +14,16 @@ namespace ithappy.Animals_FREE
         [SerializeField] private Transform m_FireTransform;
         [SerializeField] private string m_FireObjectName = "RPGDONE";
         [SerializeField] private float m_FirePower = 30f;
-        [SerializeField] private float m_MuzzleOffset = 0.35f;
+        [SerializeField] private float m_MuzzleOffset = 0.12f;
         [SerializeField] private float m_BulletLifeTime = 5f;
         [SerializeField] private PlayerStatus m_PlayerStatus;
+
         private Collider m_OwnerCollider;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureSceneDogShooter()
         {
-            foreach (var mover in FindObjectsOfType<CreatureMover>())
+            foreach (var mover in FindObjectsByType<CreatureMover>())
             {
                 var dog = mover.gameObject;
                 if (dog.transform.Find("Dog_001_rig") == null) continue;
@@ -31,12 +33,12 @@ namespace ithappy.Animals_FREE
                     dog.AddComponent<DogRpgShooter>();
                 }
             }
-
         }
 
         private void Awake()
         {
             m_OwnerCollider = GetComponent<Collider>();
+
             if (m_PlayerStatus == null)
             {
                 m_PlayerStatus = GetComponent<PlayerStatus>();
@@ -52,15 +54,7 @@ namespace ithappy.Animals_FREE
                 m_BulletPrefab = LoadBulletPrefab();
             }
 
-            if (m_FireTransform == null)
-            {
-                var fireObject = GameObject.Find(m_FireObjectName);
-                if (fireObject != null)
-                {
-                    m_FireTransform = fireObject.transform;
-                }
-            }
-
+            EnsureFireTransform();
         }
 
         private static GameObject LoadBulletPrefab()
@@ -74,23 +68,28 @@ namespace ithappy.Animals_FREE
 
         private void Update()
         {
-            if (WasFirePressed())
-            {
-                if (DialogueManager.Instance != null && DialogueManager.Instance.IsTalking())
-                {
-                    return;
-                }
+            if (!WasFirePressed()) return;
 
-                Fire();
+            if (DialogueManager.Instance != null && DialogueManager.Instance.IsTalking())
+            {
+                return;
             }
+
+            Fire();
         }
 
-        private bool WasFirePressed()
+        private static bool WasFirePressed()
         {
 #if ENABLE_INPUT_SYSTEM
-            return Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
-#else
+            bool pressed = Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
+#if ENABLE_LEGACY_INPUT_MANAGER
+            pressed = pressed || Input.GetKeyDown(KeyCode.Space);
+#endif
+            return pressed;
+#elif ENABLE_LEGACY_INPUT_MANAGER
             return Input.GetKeyDown(KeyCode.Space);
+#else
+            return false;
 #endif
         }
 
@@ -98,13 +97,21 @@ namespace ithappy.Animals_FREE
         {
             if (m_FireTransform != null) return;
 
+            foreach (Transform child in GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name == m_FireObjectName)
+                {
+                    m_FireTransform = child;
+                    return;
+                }
+            }
+
             var fireObject = GameObject.Find(m_FireObjectName);
             if (fireObject != null)
             {
                 m_FireTransform = fireObject.transform;
             }
         }
-
 
         private void Fire()
         {
@@ -127,8 +134,9 @@ namespace ithappy.Animals_FREE
                 return;
             }
 
-            var fireRotation = m_FireTransform.rotation;
-            var firePosition = m_FireTransform.position + m_FireTransform.forward * m_MuzzleOffset;
+            Vector3 fireDirection = GetFireDirection();
+            Vector3 firePosition = GetMuzzlePosition(fireDirection);
+            Quaternion fireRotation = Quaternion.LookRotation(fireDirection, Vector3.up);
             var bullet = Instantiate(m_BulletPrefab, firePosition, fireRotation);
 
             if (!bullet.TryGetComponent<Rigidbody>(out var bulletRigidbody))
@@ -151,8 +159,63 @@ namespace ithappy.Animals_FREE
                 bullet.AddComponent<BulletCollisionDestroyer>();
             }
 
-            bulletRigidbody.linearVelocity = m_FireTransform.forward * m_FirePower;
+            bulletRigidbody.isKinematic = false;
+            bulletRigidbody.useGravity = false;
+            bulletRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            bulletRigidbody.linearVelocity = fireDirection * m_FirePower;
             Destroy(bullet, m_BulletLifeTime);
+        }
+
+        private Vector3 GetFireDirection()
+        {
+            Camera mainCamera = Camera.main;
+            Vector3 direction = mainCamera != null ? mainCamera.transform.forward : transform.forward;
+
+            if (direction.sqrMagnitude < 0.0001f)
+            {
+                direction = transform.forward;
+            }
+
+            return direction.normalized;
+        }
+
+        private Vector3 GetMuzzlePosition(Vector3 fireDirection)
+        {
+            if (TryGetFireBounds(out Bounds bounds))
+            {
+                float distanceToFront = GetProjectedExtent(bounds.extents, fireDirection);
+                return bounds.center + fireDirection * (distanceToFront + m_MuzzleOffset);
+            }
+
+            return m_FireTransform.position + fireDirection * m_MuzzleOffset;
+        }
+
+        private bool TryGetFireBounds(out Bounds bounds)
+        {
+            Renderer[] renderers = m_FireTransform.GetComponentsInChildren<Renderer>(true);
+            bounds = default;
+
+            bool hasBounds = false;
+            foreach (Renderer renderer in renderers)
+            {
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
+        }
+
+        private static float GetProjectedExtent(Vector3 extents, Vector3 direction)
+        {
+            Vector3 absDirection = new Vector3(Mathf.Abs(direction.x), Mathf.Abs(direction.y), Mathf.Abs(direction.z));
+            return Vector3.Dot(extents, absDirection);
         }
     }
 
@@ -164,6 +227,3 @@ namespace ithappy.Animals_FREE
         }
     }
 }
-
-
-
