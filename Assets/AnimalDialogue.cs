@@ -7,11 +7,23 @@ public class AnimalDialogue : MonoBehaviour
     public Sprite portrait;
 
     [Header("Prompt")]
+    public Transform promptTarget;
     public Vector3 promptOffset = new Vector3(0f, 1.8f, 0f);
 
     public Vector3 GetPromptWorldPosition()
     {
-        return transform.position + promptOffset;
+        Transform target = promptTarget;
+        if (target == null && transform.parent != null)
+        {
+            target = transform.parent;
+        }
+
+        if (target == null)
+        {
+            target = transform;
+        }
+
+        return target.position + promptOffset;
     }
 
     private void OnTriggerEnter(Collider other)
