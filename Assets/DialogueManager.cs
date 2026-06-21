@@ -27,6 +27,7 @@ public class DialogueManager : MonoBehaviour
 
     private const string FirstLine = "\u002D \uBB50\uC57C?";
     private const string ChoiceLine = "\u002D \uD615\uC528, \uC6B0\uB9AC\uB3C4 \uBA39\uACE0 \uC0B4\uC544\uC57C\uC9C0.";
+    private const string ClosingLine = "\u002D \uB2E4\uC2DC \uC624\uC9C0 \uB9C8\uC1FC.";
     private const float WorldPromptScale = 0.005f;
     private const float ChoicePanelY = 170f;
     private const float ChoiceFontSize = 22f;
@@ -263,7 +264,14 @@ public class DialogueManager : MonoBehaviour
 
     private void ContinueAfterChoice()
     {
-        EndDialogue();
+        waitingForChoice = false;
+        waitingForChoiceLine = false;
+        waitingForChoiceReveal = false;
+        canCloseWithClick = true;
+        waitForClickRelease = true;
+
+        SetChoicesVisible(false);
+        SetDialogueText(ClosingLine);
     }
 
     private void ShowChoiceLine()
