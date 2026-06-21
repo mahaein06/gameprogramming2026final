@@ -1,6 +1,9 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -35,6 +38,27 @@ public class DialogueManager : MonoBehaviour
     private bool promptCanInteract;
     private RectTransform fPromptRect;
     private Canvas fPromptWorldCanvas;
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (Application.isPlaying || dialoguePanel == null) return;
+
+        EnsureChoiceUI();
+        BindChoiceButtons();
+        SetActiveSafe(choicePanel, true);
+        MarkDialogueUIAsDirty();
+    }
+
+    [ContextMenu("Create/Refresh Choice UI")]
+    private void CreateOrRefreshChoiceUIInEditor()
+    {
+        EnsureChoiceUI();
+        BindChoiceButtons();
+        SetActiveSafe(choicePanel, true);
+        MarkDialogueUIAsDirty();
+    }
+#endif
 
     private void Awake()
     {
@@ -209,37 +233,60 @@ public class DialogueManager : MonoBehaviour
         if (dialoguePanel == null) return;
 
         Transform panelTransform = dialoguePanel.transform;
+        bool createdChoicePanel = false;
 
         if (choicePanel == null)
         {
             Transform existingChoicePanel = FindDeepChild(panelTransform, "ChoicePanel");
-            choicePanel = existingChoicePanel != null ? existingChoicePanel.gameObject : CreateChoicePanel(panelTransform);
+            if (existingChoicePanel != null)
+            {
+                choicePanel = existingChoicePanel.gameObject;
+            }
+            else
+            {
+                choicePanel = CreateChoicePanel(panelTransform);
+                createdChoicePanel = true;
+            }
         }
 
         if (choicePanel == null) return;
 
-        ApplyChoicePanelLayout();
+        if (createdChoicePanel)
+        {
+            ApplyChoicePanelLayout();
+        }
 
+        bool createdHealButton = false;
         if (healButton == null)
         {
             healButton = FindDeepChildComponent<Button>(choicePanel.transform, "HealButton");
             if (healButton == null)
             {
                 healButton = CreateChoiceButton(choicePanel.transform, "HealButton", "\uCCB4\uB825 \uCDA9\uC804\uD558\uAE30");
+                createdHealButton = true;
             }
         }
 
+        bool createdReloadButton = false;
         if (reloadButton == null)
         {
             reloadButton = FindDeepChildComponent<Button>(choicePanel.transform, "ReloadButton");
             if (reloadButton == null)
             {
                 reloadButton = CreateChoiceButton(choicePanel.transform, "ReloadButton", "\uCD1D\uC54C \uC7A5\uC804\uD558\uAE30");
+                createdReloadButton = true;
             }
         }
 
-        ApplyChoiceTextStyle(healButton, "\uCCB4\uB825 \uCDA9\uC804\uD558\uAE30");
-        ApplyChoiceTextStyle(reloadButton, "\uCD1D\uC54C \uC7A5\uC804\uD558\uAE30");
+        if (createdHealButton)
+        {
+            ApplyChoiceTextStyle(healButton, "\uCCB4\uB825 \uCDA9\uC804\uD558\uAE30");
+        }
+
+        if (createdReloadButton)
+        {
+            ApplyChoiceTextStyle(reloadButton, "\uCD1D\uC54C \uC7A5\uC804\uD558\uAE30");
+        }
     }
 
     private void BindChoiceButtons()
@@ -358,7 +405,10 @@ public class DialogueManager : MonoBehaviour
         if (text == null) return;
 
         text.text = label;
-        text.fontSize = ChoiceFontSize;
+        if (text.fontSize <= 0f || Mathf.Approximately(text.fontSize, 36f))
+        {
+            text.fontSize = ChoiceFontSize;
+        }
         text.alignment = TextAlignmentOptions.Center;
         text.color = Color.white;
         text.raycastTarget = false;
@@ -378,6 +428,18 @@ public class DialogueManager : MonoBehaviour
             rect.offsetMax = new Vector2(0f, 16f);
         }
     }
+
+#if UNITY_EDITOR
+    private void MarkDialogueUIAsDirty()
+    {
+        EditorUtility.SetDirty(this);
+
+        if (dialoguePanel != null) EditorUtility.SetDirty(dialoguePanel);
+        if (choicePanel != null) EditorUtility.SetDirty(choicePanel);
+        if (healButton != null) EditorUtility.SetDirty(healButton.gameObject);
+        if (reloadButton != null) EditorUtility.SetDirty(reloadButton.gameObject);
+    }
+#endif
 
     private void PrepareWorldPrompt()
     {
