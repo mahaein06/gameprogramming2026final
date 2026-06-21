@@ -1871,7 +1871,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Player: {fileID: 1373702816}
   m_SensitivityX: 0.01
-  m_SensitivityY: 0
+  m_SensitivityY: 0.01
   m_Zoom: 0.75
   m_SensetivityZoom: 0.1
   m_MinAngle: -45
