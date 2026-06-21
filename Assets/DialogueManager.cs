@@ -22,8 +22,8 @@ public class DialogueManager : MonoBehaviour
     [Header("Player")]
     public PlayerStatus playerStatus;
 
-    private const string FirstLine = "- ?몃Ŋ鍮?";
-    private const string AfterChoiceLine = "- ?類ㅻ뎁, ?怨뺚봺???믩객????용┛ 獄쏅뗄嫄??블? ??苡뀐쭕??뵠??";
+    private const string FirstLine = "- 뭐야?";
+    private const string AfterChoiceLine = "- 형씨, 우리도 먹고 살기 바쁘다고. 이번만이야.";
     private const float WorldPromptScale = 0.005f;
 
     private AnimalDialogue currentAnimal;
@@ -42,10 +42,9 @@ public class DialogueManager : MonoBehaviour
         }
 
         Instance = this;
-        AutoAssignMissingReferences();
+        AutoAssignExistingReferences();
         KeepManagerOutsideDialoguePanel();
         PrepareWorldPrompt();
-        CreateMissingChoiceUI();
 
         SetActiveSafe(fPrompt, false);
         SetActiveSafe(dialoguePanel, false);
@@ -56,19 +55,11 @@ public class DialogueManager : MonoBehaviour
             healButton.onClick.RemoveListener(OnHealSelected);
             healButton.onClick.AddListener(OnHealSelected);
         }
-        else
-        {
-            Debug.LogWarning("DialogueManager: Heal Button is not assigned.", this);
-        }
 
         if (reloadButton != null)
         {
             reloadButton.onClick.RemoveListener(OnReloadSelected);
             reloadButton.onClick.AddListener(OnReloadSelected);
-        }
-        else
-        {
-            Debug.LogWarning("DialogueManager: Reload Button is not assigned.", this);
         }
     }
 
@@ -130,34 +121,33 @@ public class DialogueManager : MonoBehaviour
 
         currentAnimal = animal;
         isTalking = true;
-        waitingForChoice = true;
-        canCloseWithClick = false;
         promptCanInteract = false;
+
+        bool hasChoices = choicePanel != null && healButton != null && reloadButton != null;
+        waitingForChoice = hasChoices;
+        canCloseWithClick = !hasChoices;
 
         SetActiveSafe(fPrompt, false);
         SetActiveSafe(dialoguePanel, true);
-        SetActiveSafe(choicePanel, true);
+        SetActiveSafe(choicePanel, hasChoices);
 
         if (portraitImage != null)
         {
             portraitImage.sprite = animal.portrait;
             portraitImage.enabled = animal.portrait != null;
         }
-        else
-        {
-            Debug.LogWarning("DialogueManager: Portrait Image is not assigned.", this);
-        }
 
         if (nameText != null)
         {
             nameText.text = string.IsNullOrEmpty(animal.animalName) ? "Chicken" : animal.animalName;
         }
-        else
-        {
-            Debug.LogWarning("DialogueManager: Name Text is not assigned.", this);
-        }
 
         SetDialogueText(FirstLine);
+
+        if (!hasChoices)
+        {
+            Debug.LogWarning("DialogueManager: ChoicePanel/HealButton/ReloadButton are not assigned. Existing DialoguePanel will show without choices.", this);
+        }
     }
 
     public void EndDialogue()
@@ -295,7 +285,7 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
-    private void AutoAssignMissingReferences()
+    private void AutoAssignExistingReferences()
     {
         if (playerStatus == null)
         {
@@ -327,110 +317,48 @@ public class DialogueManager : MonoBehaviour
 
         if (dialoguePanel == null) return;
 
-        if (portraitImage == null)
-        {
-            Transform portrait = dialoguePanel.transform.Find("PortraitImage");
-            if (portrait != null)
-            {
-                portraitImage = portrait.GetComponent<Image>();
-            }
-        }
-
-        if (nameText == null)
-        {
-            Transform name = dialoguePanel.transform.Find("NameText");
-            if (name != null)
-            {
-                nameText = name.GetComponent<TMP_Text>();
-            }
-        }
-
-        if (dialogueText == null)
-        {
-            Transform text = dialoguePanel.transform.Find("DialogueText");
-            if (text != null)
-            {
-                dialogueText = text.GetComponent<TMP_Text>();
-            }
-        }
-    }
-
-    private void CreateMissingChoiceUI()
-    {
-        if (dialoguePanel == null) return;
+        portraitImage ??= FindDeepChildComponent<Image>(dialoguePanel.transform, "PortraitImage");
+        nameText ??= FindDeepChildComponent<TMP_Text>(dialoguePanel.transform, "NameText");
+        dialogueText ??= FindDeepChildComponent<TMP_Text>(dialoguePanel.transform, "DialogueText");
 
         if (choicePanel == null)
         {
-            Transform existingChoicePanel = dialoguePanel.transform.Find("ChoicePanel");
-            if (existingChoicePanel != null)
+            Transform foundChoicePanel = FindDeepChild(dialoguePanel.transform, "ChoicePanel");
+            if (foundChoicePanel != null)
             {
-                choicePanel = existingChoicePanel.gameObject;
-            }
-            else
-            {
-                choicePanel = new GameObject("ChoicePanel", typeof(RectTransform));
-                choicePanel.transform.SetParent(dialoguePanel.transform, false);
-                RectTransform rect = choicePanel.GetComponent<RectTransform>();
-                rect.anchorMin = new Vector2(0.5f, 0f);
-                rect.anchorMax = new Vector2(0.5f, 0f);
-                rect.pivot = new Vector2(0.5f, 0f);
-                rect.anchoredPosition = new Vector2(0f, 20f);
-                rect.sizeDelta = new Vector2(420f, 60f);
+                choicePanel = foundChoicePanel.gameObject;
             }
         }
 
-        if (healButton == null)
-        {
-            healButton = GetOrCreateChoiceButton("HealButton", "筌ｋ????겸뫗???띾┛", new Vector2(-110f, 0f));
-        }
-
-        if (reloadButton == null)
-        {
-            reloadButton = GetOrCreateChoiceButton("ReloadButton", "?μ빘釉??關???띾┛", new Vector2(110f, 0f));
-        }
+        healButton ??= FindDeepChildComponent<Button>(dialoguePanel.transform, "HealButton");
+        reloadButton ??= FindDeepChildComponent<Button>(dialoguePanel.transform, "ReloadButton");
     }
 
-    private Button GetOrCreateChoiceButton(string objectName, string label, Vector2 anchoredPosition)
+    private static T FindDeepChildComponent<T>(Transform parent, string childName) where T : Component
     {
-        Transform existing = choicePanel.transform.Find(objectName);
-        if (existing != null)
+        Transform child = FindDeepChild(parent, childName);
+        return child != null ? child.GetComponent<T>() : null;
+    }
+
+    private static Transform FindDeepChild(Transform parent, string childName)
+    {
+        if (parent == null) return null;
+
+        foreach (Transform child in parent)
         {
-            Button existingButton = existing.GetComponent<Button>();
-            if (existingButton != null)
+            if (child.name == childName)
             {
-                return existingButton;
+                return child;
+            }
+
+            Transform found = FindDeepChild(child, childName);
+            if (found != null)
+            {
+                return found;
             }
         }
 
-        GameObject buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
-        buttonObject.transform.SetParent(choicePanel.transform, false);
-
-        RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
-        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
-        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
-        buttonRect.pivot = new Vector2(0.5f, 0.5f);
-        buttonRect.anchoredPosition = anchoredPosition;
-        buttonRect.sizeDelta = new Vector2(200f, 44f);
-
-        Image image = buttonObject.GetComponent<Image>();
-        image.color = new Color(1f, 1f, 1f, 0.9f);
-
-        GameObject textObject = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI));
-        textObject.transform.SetParent(buttonObject.transform, false);
-
-        RectTransform textRect = textObject.GetComponent<RectTransform>();
-        textRect.anchorMin = Vector2.zero;
-        textRect.anchorMax = Vector2.one;
-        textRect.offsetMin = Vector2.zero;
-        textRect.offsetMax = Vector2.zero;
-
-        TMP_Text buttonText = textObject.GetComponent<TMP_Text>();
-        buttonText.text = label;
-        buttonText.fontSize = 20f;
-        buttonText.alignment = TextAlignmentOptions.Center;
-        buttonText.color = Color.black;
-
-        return buttonObject.GetComponent<Button>();
+        return null;
     }
 
     private static bool WasInteractPressed()
