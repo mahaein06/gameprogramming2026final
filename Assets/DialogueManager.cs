@@ -22,8 +22,8 @@ public class DialogueManager : MonoBehaviour
     [Header("Player")]
     public PlayerStatus playerStatus;
 
-    private const string FirstLine = "- 뭐야?";
-    private const string AfterChoiceLine = "- 형씨, 우리도 먹고 살기 바쁘다고. 이번만이야.";
+    private const string FirstLine = "\u002D \uBB50\uC57C?";
+    private const string AfterChoiceLine = "\u002D \uD615\uC528, \uC6B0\uB9AC\uB3C4 \uBA39\uACE0 \uC0B4\uAE30 \uBC14\uC058\uB2E4\uACE0. \uC774\uBC88\uB9CC\uC774\uC57C.";
     private const float WorldPromptScale = 0.005f;
 
     private AnimalDialogue currentAnimal;
@@ -72,7 +72,7 @@ public class DialogueManager : MonoBehaviour
     {
         if (!isTalking)
         {
-            if (currentAnimal != null && promptCanInteract && fPrompt != null && fPrompt.activeInHierarchy && WasInteractPressed())
+            if (currentAnimal != null && promptCanInteract && WasInteractPressed())
             {
                 StartDialogue(currentAnimal);
             }
@@ -102,6 +102,7 @@ public class DialogueManager : MonoBehaviour
         if (!isTalking)
         {
             SetActiveSafe(fPrompt, true);
+            promptCanInteract = fPrompt != null;
             UpdatePromptWorldPose();
         }
     }
@@ -162,6 +163,7 @@ public class DialogueManager : MonoBehaviour
         if (currentAnimal != null)
         {
             SetActiveSafe(fPrompt, true);
+            promptCanInteract = fPrompt != null;
             UpdatePromptWorldPose();
         }
     }
@@ -294,7 +296,7 @@ public class DialogueManager : MonoBehaviour
 
         if (dialoguePanel == null)
         {
-            GameObject foundDialoguePanel = GameObject.Find("DialoguePanel");
+            GameObject foundDialoguePanel = FindGameObjectIncludingInactive("DialoguePanel");
             if (foundDialoguePanel != null)
             {
                 dialoguePanel = foundDialoguePanel;
@@ -303,10 +305,10 @@ public class DialogueManager : MonoBehaviour
 
         if (fPrompt == null)
         {
-            GameObject foundPrompt = GameObject.Find("FPrompText");
+            GameObject foundPrompt = FindGameObjectIncludingInactive("FPrompText");
             if (foundPrompt == null)
             {
-                foundPrompt = GameObject.Find("FPromptText");
+                foundPrompt = FindGameObjectIncludingInactive("FPromptText");
             }
 
             if (foundPrompt != null)
@@ -334,6 +336,20 @@ public class DialogueManager : MonoBehaviour
         reloadButton ??= FindDeepChildComponent<Button>(dialoguePanel.transform, "ReloadButton");
     }
 
+
+    private static GameObject FindGameObjectIncludingInactive(string objectName)
+    {
+        Transform[] transforms = Resources.FindObjectsOfTypeAll<Transform>();
+        foreach (Transform found in transforms)
+        {
+            if (found.name == objectName && found.gameObject.scene.IsValid())
+            {
+                return found.gameObject;
+            }
+        }
+
+        return null;
+    }
     private static T FindDeepChildComponent<T>(Transform parent, string childName) where T : Component
     {
         Transform child = FindDeepChild(parent, childName);

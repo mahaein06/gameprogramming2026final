@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class AnimalDialogue : MonoBehaviour
 {
@@ -37,6 +37,16 @@ public class AnimalDialogue : MonoBehaviour
         else
         {
             Debug.LogWarning("AnimalDialogue: DialogueManager instance was not found.", this);
+        }
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (!other.CompareTag("Player")) return;
+
+        if (DialogueManager.Instance != null)
+        {
+            DialogueManager.Instance.ShowPrompt(this);
         }
     }
 
