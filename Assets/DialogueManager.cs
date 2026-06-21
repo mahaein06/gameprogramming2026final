@@ -29,6 +29,8 @@ public class DialogueManager : MonoBehaviour
     private bool isTalking;
     private bool waitingForChoice;
     private bool canCloseWithClick;
+    private RectTransform fPromptRect;
+    private Canvas fPromptCanvas;
 
     private void Awake()
     {
@@ -38,6 +40,7 @@ public class DialogueManager : MonoBehaviour
         }
 
         Instance = this;
+        CachePromptReferences();
 
         SetActiveSafe(fPrompt, false);
         SetActiveSafe(dialoguePanel, false);
@@ -66,6 +69,8 @@ public class DialogueManager : MonoBehaviour
 
     private void Update()
     {
+        UpdatePromptPosition();
+
         if (!isTalking)
         {
             if (currentAnimal != null && WasInteractPressed())
@@ -98,6 +103,7 @@ public class DialogueManager : MonoBehaviour
         if (!isTalking)
         {
             SetActiveSafe(fPrompt, true);
+            UpdatePromptPosition();
         }
     }
 
@@ -156,6 +162,7 @@ public class DialogueManager : MonoBehaviour
         if (currentAnimal != null)
         {
             SetActiveSafe(fPrompt, true);
+            UpdatePromptPosition();
         }
     }
 
@@ -195,6 +202,51 @@ public class DialogueManager : MonoBehaviour
         SetDialogueText(AfterChoiceLine);
     }
 
+    private void CachePromptReferences()
+    {
+        if (fPrompt == null) return;
+
+        fPromptRect = fPrompt.GetComponent<RectTransform>();
+        fPromptCanvas = fPrompt.GetComponentInParent<Canvas>();
+    }
+
+    private void UpdatePromptPosition()
+    {
+        if (fPrompt == null || currentAnimal == null || isTalking) return;
+
+        if (fPromptRect == null || fPromptCanvas == null)
+        {
+            CachePromptReferences();
+        }
+
+        Camera cameraToUse = Camera.main;
+        if (cameraToUse == null)
+        {
+            SetActiveSafe(fPrompt, false);
+            return;
+        }
+
+        Vector3 screenPosition = cameraToUse.WorldToScreenPoint(currentAnimal.GetPromptWorldPosition());
+        bool isInFrontOfCamera = screenPosition.z > 0f;
+        SetActiveSafe(fPrompt, isInFrontOfCamera);
+
+        if (!isInFrontOfCamera || fPromptRect == null) return;
+
+        if (fPromptCanvas != null && fPromptCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+        {
+            RectTransform canvasRect = fPromptCanvas.transform as RectTransform;
+            Camera canvasCamera = fPromptCanvas.worldCamera != null ? fPromptCanvas.worldCamera : cameraToUse;
+            if (canvasRect != null && RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPosition, canvasCamera, out Vector2 localPosition))
+            {
+                fPromptRect.anchoredPosition = localPosition;
+            }
+        }
+        else
+        {
+            fPromptRect.position = screenPosition;
+        }
+    }
+
     private static bool WasInteractPressed()
     {
 #if ENABLE_INPUT_SYSTEM
@@ -227,7 +279,7 @@ public class DialogueManager : MonoBehaviour
 
     private static void SetActiveSafe(GameObject target, bool active)
     {
-        if (target != null)
+        if (target != null && target.activeSelf != active)
         {
             target.SetActive(active);
         }

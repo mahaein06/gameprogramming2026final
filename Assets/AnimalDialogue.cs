@@ -6,6 +6,14 @@ public class AnimalDialogue : MonoBehaviour
     public string animalName = "Chicken";
     public Sprite portrait;
 
+    [Header("Prompt")]
+    public Vector3 promptOffset = new Vector3(0f, 1.8f, 0f);
+
+    public Vector3 GetPromptWorldPosition()
+    {
+        return transform.position + promptOffset;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player")) return;
