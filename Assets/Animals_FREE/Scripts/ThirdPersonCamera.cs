@@ -36,7 +36,8 @@ namespace ithappy.Animals_FREE
                 return;
             }
 
-            m_LocalCameraOffset = m_Player.InverseTransformPoint(m_Transform.position);
+            var pivot = GetWorldPivot();
+            m_LocalCameraOffset = m_Player.InverseTransformDirection(m_Transform.position - pivot);
             m_LocalLookPoint = m_Player.InverseTransformPoint(m_Transform.position + m_Transform.forward * TargetDistance);
 
             var fromPlayer = m_Transform.position - m_Player.position;
@@ -47,17 +48,23 @@ namespace ithappy.Animals_FREE
             m_LookPoint = m_Player.TransformPoint(m_LocalLookPoint);
         }
 
+        private Vector3 GetWorldPivot()
+        {
+            return m_Player == null ? m_Transform.position : m_Player.position + Vector3.up * m_Offset;
+        }
+
         public override void SetInput(in Vector2 delta, float scroll)
         {
             base.SetInput(delta, scroll);
 
             if (m_UseSceneCameraPose && m_Player != null)
             {
-                var pitch = Quaternion.AngleAxis(m_Angles.x, Vector3.right);
-                var pitchedCameraOffset = m_LocalLookPoint + pitch * (m_LocalCameraOffset - m_LocalLookPoint);
+                var pivot = GetWorldPivot();
+                var pitch = Quaternion.AngleAxis(m_Angles.x, m_Player.right);
+                var cameraOffset = m_Player.TransformDirection(m_LocalCameraOffset);
 
-                m_TargetPos = m_Player.TransformPoint(pitchedCameraOffset);
-                m_LookPoint = m_Player.TransformPoint(m_LocalLookPoint);
+                m_TargetPos = pivot + pitch * cameraOffset;
+                m_LookPoint = pivot;
                 return;
             }
             var dir = new Vector3(0, 0, -m_Distance);
