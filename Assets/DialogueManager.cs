@@ -26,7 +26,7 @@ public class DialogueManager : MonoBehaviour
     public PlayerStatus playerStatus;
 
     private const string FirstLine = "\u002D \uBB50\uC57C?";
-    private const string AfterChoiceLine = "\u002D \uD615\uC528, \uC6B0\uB9AC\uB3C4 \uBA39\uACE0 \uC0B4\uAE30 \uBC14\uC058\uB2E4\uACE0. \uC774\uBC88\uB9CC\uC774\uC57C.";
+    private const string ChoiceLine = "\u002D \uD615\uC528, \uC6B0\uB9AC\uB3C4 \uBA39\uACE0 \uC0B4\uC544\uC57C\uC9C0.";
     private const float WorldPromptScale = 0.005f;
     private const float ChoicePanelY = 170f;
     private const float ChoiceFontSize = 22f;
@@ -34,6 +34,7 @@ public class DialogueManager : MonoBehaviour
     private AnimalDialogue currentAnimal;
     private bool isTalking;
     private bool waitingForChoice;
+    private bool waitingForChoiceLine;
     private bool canCloseWithClick;
     private bool promptCanInteract;
     private RectTransform fPromptRect;
@@ -114,6 +115,12 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
+        if (waitingForChoiceLine && WasLeftClickPressed())
+        {
+            ShowChoiceLine();
+            return;
+        }
+
         if (canCloseWithClick && WasLeftClickPressed())
         {
             EndDialogue();
@@ -160,12 +167,13 @@ public class DialogueManager : MonoBehaviour
         BindChoiceButtons();
 
         bool hasChoices = choicePanel != null && healButton != null && reloadButton != null;
-        waitingForChoice = hasChoices;
+        waitingForChoice = false;
+        waitingForChoiceLine = true;
         canCloseWithClick = !hasChoices;
 
         SetActiveSafe(fPrompt, false);
         SetActiveSafe(dialoguePanel, true);
-        SetActiveSafe(choicePanel, hasChoices);
+        SetActiveSafe(choicePanel, false);
 
         if (portraitImage != null && animal.portrait != null)
         {
@@ -190,6 +198,7 @@ public class DialogueManager : MonoBehaviour
     {
         isTalking = false;
         waitingForChoice = false;
+        waitingForChoiceLine = false;
         canCloseWithClick = false;
 
         SetActiveSafe(dialoguePanel, false);
@@ -238,6 +247,23 @@ public class DialogueManager : MonoBehaviour
     private void ContinueAfterChoice()
     {
         EndDialogue();
+    }
+
+    private void ShowChoiceLine()
+    {
+        bool hasChoices = choicePanel != null && healButton != null && reloadButton != null;
+
+        waitingForChoiceLine = false;
+        waitingForChoice = hasChoices;
+        canCloseWithClick = !hasChoices;
+
+        SetDialogueText(ChoiceLine);
+        SetActiveSafe(choicePanel, hasChoices);
+
+        if (!hasChoices)
+        {
+            Debug.LogWarning("DialogueManager: ChoicePanel/HealButton/ReloadButton are not assigned. Existing DialoguePanel will show without choices.", this);
+        }
     }
 
     private void EnsureChoiceUI()
