@@ -22,8 +22,8 @@ namespace ithappy.Animals_FREE
         [SerializeField, Range(0f, 70f)] private float m_MaxAimPitch = 45f;
         public Transform firePosition;
         private Collider m_OwnerCollider;
-        private Quaternion m_StartFireLocalRotation = Quaternion.identity;
-        private bool m_HasStartFireLocalRotation;
+        private Quaternion m_FireRotationOffset = Quaternion.identity;
+        private bool m_HasFireRotationOffset;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureSceneDogShooter()
@@ -60,7 +60,7 @@ namespace ithappy.Animals_FREE
             }
 
             EnsureFireTransform();
-            CacheStartFireLocalRotation();
+            CacheFireRotationOffset();
         }
 
         private void LateUpdate()
@@ -135,34 +135,48 @@ namespace ithappy.Animals_FREE
             if (!m_MatchFireTransformToCamera) return;
 
             EnsureFireTransform();
-            CacheStartFireLocalRotation();
+            CacheFireRotationOffset();
 
-            if (m_FireTransform == null || !m_HasStartFireLocalRotation) return;
+            if (m_FireTransform == null || !m_HasFireRotationOffset) return;
 
-            float pitch = GetCameraPitch();
-            m_FireTransform.localRotation = m_StartFireLocalRotation * Quaternion.Euler(pitch, 0f, 0f);
+            Vector3 aimDirection = GetAimDirection();
+            if (aimDirection.sqrMagnitude < 0.0001f) return;
+
+            Quaternion aimRotation = Quaternion.LookRotation(aimDirection, transform.up);
+            m_FireTransform.rotation = aimRotation * m_FireRotationOffset;
         }
 
-        private void CacheStartFireLocalRotation()
+        private void CacheFireRotationOffset()
         {
-            if (m_HasStartFireLocalRotation || m_FireTransform == null) return;
+            if (m_HasFireRotationOffset || m_FireTransform == null) return;
 
-            m_StartFireLocalRotation = m_FireTransform.localRotation;
-            m_HasStartFireLocalRotation = true;
+            Vector3 aimDirection = GetAimDirection();
+            if (aimDirection.sqrMagnitude < 0.0001f)
+            {
+                aimDirection = transform.forward;
+            }
+
+            Quaternion aimRotation = Quaternion.LookRotation(aimDirection, transform.up);
+            m_FireRotationOffset = Quaternion.Inverse(aimRotation) * m_FireTransform.rotation;
+            m_HasFireRotationOffset = true;
         }
 
-        private float GetCameraPitch()
+        private Vector3 GetAimDirection()
         {
             Camera mainCamera = Camera.main;
             if (mainCamera == null)
             {
-                return 0f;
+                return transform.forward;
             }
 
             Vector3 localCameraForward = transform.InverseTransformDirection(mainCamera.transform.forward);
             float horizontalMagnitude = new Vector2(localCameraForward.x, localCameraForward.z).magnitude;
             float pitch = Mathf.Atan2(localCameraForward.y, Mathf.Max(horizontalMagnitude, 0.0001f)) * Mathf.Rad2Deg;
-            return Mathf.Clamp(pitch, m_MinAimPitch, m_MaxAimPitch);
+            pitch = Mathf.Clamp(pitch, m_MinAimPitch, m_MaxAimPitch);
+
+            float pitchRadians = pitch * Mathf.Deg2Rad;
+            Vector3 localAim = new Vector3(0f, Mathf.Sin(pitchRadians), Mathf.Cos(pitchRadians));
+            return transform.TransformDirection(localAim).normalized;
         }
 
         private void Fire()
@@ -220,15 +234,8 @@ namespace ithappy.Animals_FREE
 
         private Vector3 GetFireDirection()
         {
-            Camera mainCamera = Camera.main;
-            Vector3 direction = mainCamera != null ? mainCamera.transform.forward : transform.forward;
-
-            if (direction.sqrMagnitude < 0.0001f)
-            {
-                direction = transform.forward;
-            }
-
-            return direction.normalized;
+            Vector3 direction = GetAimDirection();
+            return direction.sqrMagnitude < 0.0001f ? transform.forward : direction.normalized;
         }
 
         private Vector3 GetMuzzlePosition(Vector3 fireDirection)
