@@ -54,7 +54,8 @@ namespace ithappy.Animals_FREE
 
         public virtual void SetInput(in Vector2 delta, float scroll)
         {
-            m_Angles += new Vector2(delta.y * m_SensitivityY, delta.x * m_SensitivityX) * 360f;
+            float sensitivityY = m_SensitivityY > 0f ? m_SensitivityY : m_SensitivityX;
+            m_Angles += new Vector2(delta.y * sensitivityY, delta.x * m_SensitivityX) * 360f;
             m_Angles.x = Mathf.Clamp(m_Angles.x, m_MinAngle, m_MaxAngle);
 
             m_Zoom += scroll * m_SensetivityZoom;
