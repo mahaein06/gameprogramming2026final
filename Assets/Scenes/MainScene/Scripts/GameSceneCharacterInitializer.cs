@@ -26,8 +26,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         if (scene.name != GameSceneName) return;
 
         var selected = CharacterSelectionState.SelectedAnimal;
-        var camera = FindAnyObjectByType<ThirdPersonCamera>();
         var selectedRoot = FindAnimalRoot(selected);
+        var selectedCamera = ConfigureCameras(selected, selectedRoot);
 
         foreach (SelectableAnimal animal in System.Enum.GetValues(typeof(SelectableAnimal)))
         {
@@ -36,16 +36,103 @@ public class GameSceneCharacterInitializer : MonoBehaviour
 
             bool isPlayer = animal == selected;
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
-            ConfigureInput(root, camera, isPlayer);
+            ConfigureInput(root, selectedCamera, isPlayer);
             ConfigureShooter(root, isPlayer);
             ConfigurePlayerStatus(root, isPlayer);
         }
 
-        if (camera != null && selectedRoot != null)
+        if (selectedCamera != null && selectedRoot != null)
         {
-            camera.BindPlayer(selectedRoot.transform);
-            camera.ReinitializeFromCurrentTransform();
+            selectedCamera.BindPlayer(selectedRoot.transform);
+            selectedCamera.ReinitializeFromCurrentTransform();
         }
+    }
+
+    private static ThirdPersonCamera ConfigureCameras(SelectableAnimal selected, GameObject selectedRoot)
+    {
+        var cameras = FindObjectsByType<ThirdPersonCamera>(FindObjectsInactive.Include);
+        ThirdPersonCamera selectedCamera = FindNamedCamera(cameras, selected) ?? FindNearestCamera(cameras, selectedRoot);
+
+        foreach (var cameraRig in cameras)
+        {
+            bool active = cameraRig == selectedCamera;
+            cameraRig.gameObject.SetActive(active);
+
+            var unityCamera = cameraRig.GetComponent<Camera>();
+            if (unityCamera != null)
+            {
+                unityCamera.enabled = active;
+                if (active)
+                {
+                    unityCamera.tag = "MainCamera";
+                }
+            }
+
+            var audioListener = cameraRig.GetComponent<AudioListener>();
+            if (audioListener != null)
+            {
+                audioListener.enabled = active;
+            }
+        }
+
+        return selectedCamera;
+    }
+
+    private static ThirdPersonCamera FindNamedCamera(ThirdPersonCamera[] cameras, SelectableAnimal animal)
+    {
+        string[] names = GetCameraNames(animal);
+        foreach (string cameraName in names)
+        {
+            foreach (var cameraRig in cameras)
+            {
+                if (cameraRig.name == cameraName)
+                {
+                    return cameraRig;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string[] GetCameraNames(SelectableAnimal animal)
+    {
+        switch (animal)
+        {
+            case SelectableAnimal.Deer:
+                return new[] { "DeerCam" };
+            case SelectableAnimal.Horse:
+                return new[] { "HorseCam" };
+            case SelectableAnimal.Penguin:
+                return new[] { "PenguinCam", "PinguinCam" };
+            case SelectableAnimal.Dog:
+                return new[] { "DogCam" };
+            case SelectableAnimal.Tiger:
+                return new[] { "TigerCam" };
+            default:
+                return new[] { "DogCam" };
+        }
+    }
+
+    private static ThirdPersonCamera FindNearestCamera(ThirdPersonCamera[] cameras, GameObject selectedRoot)
+    {
+        if (selectedRoot == null || cameras.Length == 0) return cameras.Length > 0 ? cameras[0] : null;
+
+        ThirdPersonCamera best = null;
+        float bestDistance = float.MaxValue;
+        Vector3 rootPosition = selectedRoot.transform.position;
+
+        foreach (var cameraRig in cameras)
+        {
+            float distance = (cameraRig.transform.position - rootPosition).sqrMagnitude;
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                best = cameraRig;
+            }
+        }
+
+        return best;
     }
 
     private static GameObject FindAnimalRoot(SelectableAnimal animal)
@@ -151,4 +238,3 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
-
