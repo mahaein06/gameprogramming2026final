@@ -26,6 +26,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     {
         if (scene.name != GameSceneName) return;
 
+        GameSceneNavMeshBaker.EnsureInScene();
+
         var selected = CharacterSelectionState.SelectedAnimal;
         var selectedRoot = FindAnimalRoot(selected);
         var selectedCamera = ConfigureCameras(selected, selectedRoot);
@@ -338,6 +340,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 
