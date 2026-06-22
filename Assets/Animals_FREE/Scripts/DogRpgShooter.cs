@@ -17,6 +17,7 @@ namespace ithappy.Animals_FREE
         [SerializeField] private float m_MuzzleOffset = 0.12f;
         [SerializeField] private float m_BulletLifeTime = 5f;
         [SerializeField] private PlayerStatus m_PlayerStatus;
+        [SerializeField] private Camera m_AimCamera;
         [SerializeField] private bool m_MatchFireTransformToBulletAngle = true;
         public Transform firePosition;
 
@@ -48,9 +49,10 @@ namespace ithappy.Animals_FREE
             AlignFireTransformToBulletAngle();
         }
 
-        public void ConfigureForPlayer(PlayerStatus playerStatus)
+        public void ConfigureForPlayer(PlayerStatus playerStatus, Camera aimCamera = null)
         {
             m_PlayerStatus = playerStatus;
+            m_AimCamera = aimCamera != null ? aimCamera : Camera.main;
             CacheOwnerColliders();
             EnsureBulletPrefab();
             EnsureFireTransform();
@@ -135,6 +137,9 @@ namespace ithappy.Animals_FREE
             m_FireTransform = FindWeaponCandidate();
             if (m_FireTransform != null) return;
 
+            m_FireTransform = FindNearestSceneWeaponCandidate();
+            if (m_FireTransform != null) return;
+
             m_FireTransform = transform;
         }
 
@@ -165,6 +170,29 @@ namespace ithappy.Animals_FREE
                 if (best == null || IsBetterWeaponCandidate(child, best))
                 {
                     best = child;
+                }
+            }
+
+            return best;
+        }
+
+        private Transform FindNearestSceneWeaponCandidate()
+        {
+            Transform best = null;
+            float bestDistance = float.MaxValue;
+            Vector3 ownerPosition = transform.position;
+
+            foreach (Transform candidate in FindObjectsByType<Transform>(FindObjectsInactive.Include))
+            {
+                if (candidate == transform || candidate.IsChildOf(transform)) continue;
+                if (!HasWeaponName(candidate.name)) continue;
+                if (candidate.GetComponentInChildren<Renderer>(true) == null) continue;
+
+                float distance = (candidate.position - ownerPosition).sqrMagnitude;
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = candidate;
                 }
             }
 
@@ -303,8 +331,8 @@ namespace ithappy.Animals_FREE
 
         private Vector3 GetFireDirection()
         {
-            Camera mainCamera = Camera.main;
-            Vector3 direction = mainCamera != null ? mainCamera.transform.forward : transform.forward;
+            Camera aimCamera = m_AimCamera != null && m_AimCamera.isActiveAndEnabled ? m_AimCamera : Camera.main;
+            Vector3 direction = aimCamera != null ? aimCamera.transform.forward : transform.forward;
 
             if (direction.sqrMagnitude < 0.0001f)
             {

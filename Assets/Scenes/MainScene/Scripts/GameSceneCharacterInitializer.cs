@@ -38,7 +38,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
             ConfigureInput(root, selectedCamera, isPlayer);
             PlayerStatus status = ConfigurePlayerStatus(root, isPlayer);
-            ConfigureShooter(root, status, isPlayer);
+            ConfigureShooter(root, status, selectedCamera, isPlayer);
             ConfigureDialogueManager(status, isPlayer);
         }
 
@@ -196,7 +196,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 
-    private static void ConfigureShooter(GameObject root, PlayerStatus status, bool isPlayer)
+    private static void ConfigureShooter(GameObject root, PlayerStatus status, ThirdPersonCamera selectedCamera, bool isPlayer)
     {
         var shooter = root.GetComponent<DogRpgShooter>();
         if (shooter == null && isPlayer)
@@ -209,7 +209,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         shooter.enabled = isPlayer;
         if (isPlayer)
         {
-            shooter.ConfigureForPlayer(status ?? root.GetComponent<PlayerStatus>() ?? root.AddComponent<PlayerStatus>());
+            Camera aimCamera = selectedCamera != null ? selectedCamera.GetComponent<Camera>() : Camera.main;
+            shooter.ConfigureForPlayer(status ?? root.GetComponent<PlayerStatus>() ?? root.AddComponent<PlayerStatus>(), aimCamera);
         }
     }
 
@@ -252,4 +253,5 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 

@@ -33,6 +33,7 @@ public class DialogueManager : MonoBehaviour
     private const float WorldPromptScale = 0.005f;
     private const float ChoicePanelY = 170f;
     private const float ChoiceFontSize = 22f;
+    private const float DialogueFontSize = 22f;
 
     private AnimalDialogue currentAnimal;
     private bool isTalking;
@@ -50,6 +51,7 @@ public class DialogueManager : MonoBehaviour
     {
         if (Application.isPlaying || dialoguePanel == null) return;
 
+        EnsureDialogueText();
         EnsureChoiceUI();
         BindChoiceButtons();
         SetActiveSafe(choicePanel, true);
@@ -76,6 +78,7 @@ public class DialogueManager : MonoBehaviour
         Instance = this;
         AssignOnlyMissingNonUiReferences();
         KeepManagerOutsideDialoguePanel();
+        EnsureDialogueText();
         EnsureChoiceUI();
         PrepareWorldPrompt();
 
@@ -316,6 +319,63 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
+    private void EnsureDialogueText()
+    {
+        if (dialoguePanel == null) return;
+
+        if (dialogueText == null)
+        {
+            dialogueText = FindDeepChildComponent<TMP_Text>(dialoguePanel.transform, "DialogueManagerText");
+        }
+
+        DisableLegacyDialogueTexts();
+
+        if (dialogueText == null)
+        {
+            GameObject textObject = new GameObject("DialogueManagerText", typeof(RectTransform), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(dialoguePanel.transform, false);
+            dialogueText = textObject.GetComponent<TextMeshProUGUI>();
+        }
+
+        ConfigureDialogueTextLayout(dialogueText);
+    }
+
+    private void DisableLegacyDialogueTexts()
+    {
+        if (dialoguePanel == null) return;
+
+        Transform legacy = FindDeepChild(dialoguePanel.transform, "DialogueText");
+        if (legacy != null && (dialogueText == null || legacy.gameObject != dialogueText.gameObject))
+        {
+            legacy.gameObject.SetActive(false);
+        }
+    }
+    private void ConfigureDialogueTextLayout(TMP_Text text)
+    {
+        if (text == null) return;
+
+        text.fontSize = text.fontSize <= 0f ? DialogueFontSize : text.fontSize;
+        text.alignment = TextAlignmentOptions.Center;
+        text.color = text.color.a <= 0.01f ? Color.white : text.color;
+        text.raycastTarget = false;
+
+        TMP_FontAsset sourceFont = nameText != null && nameText.font != null ? nameText.font : null;
+        if (sourceFont != null && text.font == null)
+        {
+            text.font = sourceFont;
+        }
+
+        RectTransform rect = text.GetComponent<RectTransform>();
+        if (rect == null) return;
+
+        if (rect.anchorMin == rect.anchorMax && rect.sizeDelta == Vector2.zero)
+        {
+            rect.anchorMin = new Vector2(0.18f, 0.04f);
+            rect.anchorMax = new Vector2(0.82f, 0.28f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+        }
+    }
     private void EnsureChoiceUI()
     {
         if (dialoguePanel == null) return;
@@ -776,6 +836,8 @@ public class DialogueManager : MonoBehaviour
 
     private void SetDialogueText(string text)
     {
+        EnsureDialogueText();
+
         if (dialogueText != null)
         {
             dialogueText.text = text;
@@ -794,5 +856,10 @@ public class DialogueManager : MonoBehaviour
         }
     }
 }
+
+
+
+
+
 
 
