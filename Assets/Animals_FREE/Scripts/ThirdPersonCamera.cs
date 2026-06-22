@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace ithappy.Animals_FREE
 {
@@ -25,6 +25,11 @@ namespace ithappy.Animals_FREE
         private void LateUpdate()
         {
             Move(Time.deltaTime);
+        }
+
+        public void ReinitializeFromCurrentTransform()
+        {
+            InitializeFromCurrentTransform();
         }
 
         private void InitializeFromCurrentTransform()
@@ -85,7 +90,7 @@ namespace ithappy.Animals_FREE
                 var direction = m_TargetPos - m_Transform.position;
                 var delta = m_CameraSpeed * deltaTime;
 
-                if(delta * delta > direction.sqrMagnitude)
+                if (delta * delta > direction.sqrMagnitude)
                 {
                     m_Transform.position = m_TargetPos;
                 }
@@ -99,7 +104,7 @@ namespace ithappy.Animals_FREE
 
             void target()
             {
-                if(m_Target == null)
+                if (m_Target == null)
                 {
                     return;
                 }

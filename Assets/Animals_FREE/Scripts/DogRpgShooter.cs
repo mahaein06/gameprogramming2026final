@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -19,36 +19,26 @@ namespace ithappy.Animals_FREE
         [SerializeField] private PlayerStatus m_PlayerStatus;
         [SerializeField] private bool m_MatchFireTransformToBulletAngle = true;
         public Transform firePosition;
-        private Collider m_OwnerCollider;
+
+        private Collider[] m_OwnerColliders;
         private Quaternion m_FireRotationOffset = Quaternion.identity;
         private bool m_HasFireRotationOffset;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void EnsureSceneDogShooter()
+        private static readonly string[] WeaponNameHints =
         {
-            foreach (var mover in FindObjectsByType<CreatureMover>())
-            {
-                var dog = mover.gameObject;
-                if (dog.transform.Find("Dog_001_rig") == null) continue;
-
-                if (!dog.TryGetComponent<DogRpgShooter>(out _))
-                {
-                    dog.AddComponent<DogRpgShooter>();
-                }
-            }
-        }
+            "RPGDONE",
+            "SSG_Guns",
+            "Gun",
+            "Rifle",
+            "Weapon",
+            "Pistol"
+        };
 
         private void Awake()
         {
-            m_OwnerCollider = GetComponent<Collider>();
-
+            CacheOwnerColliders();
             EnsurePlayerStatus();
-
-            if (m_BulletPrefab == null)
-            {
-                m_BulletPrefab = LoadBulletPrefab();
-            }
-
+            EnsureBulletPrefab();
             EnsureFireTransform();
             CacheFireRotationOffset();
         }
@@ -56,6 +46,15 @@ namespace ithappy.Animals_FREE
         private void LateUpdate()
         {
             AlignFireTransformToBulletAngle();
+        }
+
+        public void ConfigureForPlayer(PlayerStatus playerStatus)
+        {
+            m_PlayerStatus = playerStatus;
+            CacheOwnerColliders();
+            EnsureBulletPrefab();
+            EnsureFireTransform();
+            ResetFireRotationOffset();
         }
 
         private static GameObject LoadBulletPrefab()
@@ -94,6 +93,11 @@ namespace ithappy.Animals_FREE
 #endif
         }
 
+        private void CacheOwnerColliders()
+        {
+            m_OwnerColliders = GetComponentsInChildren<Collider>(true);
+        }
+
         private void EnsurePlayerStatus()
         {
             if (m_PlayerStatus != null) return;
@@ -107,26 +111,89 @@ namespace ithappy.Animals_FREE
             m_PlayerStatus = gameObject.AddComponent<PlayerStatus>();
         }
 
+        private void EnsureBulletPrefab()
+        {
+            if (m_BulletPrefab == null)
+            {
+                m_BulletPrefab = LoadBulletPrefab();
+            }
+        }
+
         private void EnsureFireTransform()
         {
+            if (firePosition != null)
+            {
+                m_FireTransform = firePosition;
+                return;
+            }
+
+            if (m_FireTransform != null && m_FireTransform.IsChildOf(transform)) return;
+
+            m_FireTransform = FindNamedChild(m_FireObjectName);
             if (m_FireTransform != null) return;
+
+            m_FireTransform = FindWeaponCandidate();
+            if (m_FireTransform != null) return;
+
+            m_FireTransform = transform;
+        }
+
+        private Transform FindNamedChild(string targetName)
+        {
+            if (string.IsNullOrEmpty(targetName)) return null;
 
             foreach (Transform child in GetComponentsInChildren<Transform>(true))
             {
-                if (child.name == m_FireObjectName)
+                if (child.name == targetName || child.name.StartsWith(targetName + " "))
                 {
-                    m_FireTransform = child;
-                    return;
+                    return child;
                 }
             }
 
-            var fireObject = GameObject.Find(m_FireObjectName);
-            if (fireObject != null)
+            return null;
+        }
+
+        private Transform FindWeaponCandidate()
+        {
+            Transform best = null;
+            foreach (Transform child in GetComponentsInChildren<Transform>(true))
             {
-                m_FireTransform = fireObject.transform;
+                if (child == transform) continue;
+                if (!HasWeaponName(child.name)) continue;
+                if (child.GetComponentInChildren<Renderer>(true) == null) continue;
+
+                if (best == null || IsBetterWeaponCandidate(child, best))
+                {
+                    best = child;
+                }
             }
 
-            m_FireTransform = firePosition;
+            return best;
+        }
+
+        private static bool HasWeaponName(string objectName)
+        {
+            foreach (string hint in WeaponNameHints)
+            {
+                if (objectName.IndexOf(hint, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsBetterWeaponCandidate(Transform candidate, Transform currentBest)
+        {
+            bool candidateIsTrigger = candidate.name.IndexOf("Trigger", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            bool currentIsTrigger = currentBest.name.IndexOf("Trigger", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            if (candidateIsTrigger != currentIsTrigger)
+            {
+                return !candidateIsTrigger;
+            }
+
+            return candidate.childCount > currentBest.childCount;
         }
 
         private void AlignFireTransformToBulletAngle()
@@ -160,13 +227,15 @@ namespace ithappy.Animals_FREE
             m_HasFireRotationOffset = true;
         }
 
+        private void ResetFireRotationOffset()
+        {
+            m_HasFireRotationOffset = false;
+            CacheFireRotationOffset();
+        }
+
         private void Fire()
         {
-            if (m_BulletPrefab == null)
-            {
-                m_BulletPrefab = LoadBulletPrefab();
-            }
-
+            EnsureBulletPrefab();
             EnsureFireTransform();
 
             if (m_BulletPrefab == null || m_FireTransform == null) return;
@@ -178,9 +247,10 @@ namespace ithappy.Animals_FREE
             }
 
             Vector3 fireDirection = GetFireDirection();
-            Vector3 firePosition = GetMuzzlePosition(fireDirection);
+            Vector3 muzzlePosition = GetMuzzlePosition(fireDirection);
             Quaternion fireRotation = Quaternion.LookRotation(fireDirection, Vector3.up);
-            var bullet = Instantiate(m_BulletPrefab, firePosition, fireRotation);
+            var bullet = Instantiate(m_BulletPrefab, muzzlePosition, fireRotation);
+            SetTagSafely(bullet, "Bullet");
 
             if (!bullet.TryGetComponent<Rigidbody>(out var bulletRigidbody))
             {
@@ -192,10 +262,7 @@ namespace ithappy.Animals_FREE
                 bulletCollider = bullet.AddComponent<SphereCollider>();
             }
 
-            if (m_OwnerCollider != null)
-            {
-                Physics.IgnoreCollision(bulletCollider, m_OwnerCollider);
-            }
+            IgnoreOwnerCollisions(bulletCollider);
 
             if (!bullet.TryGetComponent<BulletCollisionDestroyer>(out _))
             {
@@ -207,6 +274,31 @@ namespace ithappy.Animals_FREE
             bulletRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             bulletRigidbody.linearVelocity = fireDirection * m_FirePower;
             Destroy(bullet, m_BulletLifeTime);
+        }
+
+        private void IgnoreOwnerCollisions(Collider bulletCollider)
+        {
+            if (m_OwnerColliders == null || bulletCollider == null) return;
+
+            foreach (Collider ownerCollider in m_OwnerColliders)
+            {
+                if (ownerCollider != null)
+                {
+                    Physics.IgnoreCollision(bulletCollider, ownerCollider);
+                }
+            }
+        }
+
+        private static void SetTagSafely(GameObject target, string tagName)
+        {
+            try
+            {
+                target.tag = tagName;
+            }
+            catch (UnityException)
+            {
+                Debug.LogWarning($"Tag '{tagName}' is missing. Add it in Project Settings > Tags and Layers.");
+            }
         }
 
         private Vector3 GetFireDirection()
@@ -266,7 +358,6 @@ namespace ithappy.Animals_FREE
     {
         private void OnCollisionEnter(Collision other)
         {
-            //Destroy(gameObject);
         }
     }
 }

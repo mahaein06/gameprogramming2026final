@@ -1,10 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class TigerSelectingScript : MonoBehaviour
 {
     private void OnMouseDown()
     {
-        SceneManager.LoadScene("TigerScene");
+        CharacterSelectionState.Select(SelectableAnimal.Tiger);
+        SceneManager.LoadScene("GameScene");
     }
 }
