@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 #if UNITY_EDITOR
@@ -126,19 +126,19 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
-        if (waitingForChoiceLine && WasLeftClickPressed())
+        if (waitingForChoiceLine && WasAdvancePressed())
         {
             ShowChoiceLine();
             return;
         }
 
-        if (waitingForChoiceReveal && WasLeftClickPressed())
+        if (waitingForChoiceReveal && WasAdvancePressed())
         {
             ShowChoices();
             return;
         }
 
-        if (canCloseWithClick && WasLeftClickPressed())
+        if (canCloseWithClick && WasAdvancePressed())
         {
             EndDialogue();
         }
@@ -147,6 +147,11 @@ public class DialogueManager : MonoBehaviour
     public bool IsTalking()
     {
         return isTalking;
+    }
+
+    public void BindPlayerStatus(PlayerStatus status)
+    {
+        playerStatus = status;
     }
 
     public void ShowPrompt(AnimalDialogue animal)
@@ -234,11 +239,11 @@ public class DialogueManager : MonoBehaviour
 
     private void OnHealSelected()
     {
-        AssignOnlyMissingNonUiReferences();
+        PlayerStatus currentStatus = ResolveCurrentPlayerStatus();
 
-        if (playerStatus != null)
+        if (currentStatus != null)
         {
-            playerStatus.HealFull();
+            currentStatus.HealFull();
         }
         else
         {
@@ -250,11 +255,11 @@ public class DialogueManager : MonoBehaviour
 
     private void OnReloadSelected()
     {
-        AssignOnlyMissingNonUiReferences();
+        PlayerStatus currentStatus = ResolveCurrentPlayerStatus();
 
-        if (playerStatus != null)
+        if (currentStatus != null)
         {
-            playerStatus.ReloadFull();
+            currentStatus.ReloadFull();
         }
         else
         {
@@ -626,8 +631,26 @@ public class DialogueManager : MonoBehaviour
     {
         if (playerStatus == null)
         {
-            playerStatus = FindAnyObjectByType<PlayerStatus>();
+            playerStatus = ResolveCurrentPlayerStatus();
         }
+    }
+
+    private PlayerStatus ResolveCurrentPlayerStatus()
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null && player.TryGetComponent(out PlayerStatus status))
+        {
+            playerStatus = status;
+            return status;
+        }
+
+        if (playerStatus != null && playerStatus.isActiveAndEnabled)
+        {
+            return playerStatus;
+        }
+
+        playerStatus = FindAnyObjectByType<PlayerStatus>();
+        return playerStatus;
     }
 
     private static T FindDeepChildComponent<T>(Transform parent, string childName) where T : Component
@@ -672,6 +695,25 @@ public class DialogueManager : MonoBehaviour
 #endif
     }
 
+    private static bool WasAdvancePressed()
+    {
+        return WasLeftClickPressed() || WasSubmitPressed() || WasInteractPressed();
+    }
+
+    private static bool WasSubmitPressed()
+    {
+#if ENABLE_INPUT_SYSTEM
+        bool pressed = Keyboard.current != null && (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame);
+#if ENABLE_LEGACY_INPUT_MANAGER
+        pressed = pressed || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return);
+#endif
+        return pressed;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        return Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return);
+#else
+        return false;
+#endif
+    }
     private static bool WasLeftClickPressed()
     {
 #if ENABLE_INPUT_SYSTEM
@@ -752,3 +794,5 @@ public class DialogueManager : MonoBehaviour
         }
     }
 }
+
+

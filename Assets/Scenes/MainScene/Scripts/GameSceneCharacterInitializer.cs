@@ -37,8 +37,9 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             bool isPlayer = animal == selected;
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
             ConfigureInput(root, selectedCamera, isPlayer);
-            ConfigureShooter(root, isPlayer);
-            ConfigurePlayerStatus(root, isPlayer);
+            PlayerStatus status = ConfigurePlayerStatus(root, isPlayer);
+            ConfigureShooter(root, status, isPlayer);
+            ConfigureDialogueManager(status, isPlayer);
         }
 
         if (selectedCamera != null && selectedRoot != null)
@@ -195,7 +196,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 
-    private static void ConfigureShooter(GameObject root, bool isPlayer)
+    private static void ConfigureShooter(GameObject root, PlayerStatus status, bool isPlayer)
     {
         var shooter = root.GetComponent<DogRpgShooter>();
         if (shooter == null && isPlayer)
@@ -208,11 +209,11 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         shooter.enabled = isPlayer;
         if (isPlayer)
         {
-            shooter.ConfigureForPlayer(root.GetComponent<PlayerStatus>() ?? root.AddComponent<PlayerStatus>());
+            shooter.ConfigureForPlayer(status ?? root.GetComponent<PlayerStatus>() ?? root.AddComponent<PlayerStatus>());
         }
     }
 
-    private static void ConfigurePlayerStatus(GameObject root, bool isPlayer)
+    private static PlayerStatus ConfigurePlayerStatus(GameObject root, bool isPlayer)
     {
         var status = root.GetComponent<PlayerStatus>();
         if (status == null && isPlayer)
@@ -223,6 +224,19 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         if (status != null)
         {
             status.enabled = isPlayer;
+        }
+
+        return status;
+    }
+
+    private static void ConfigureDialogueManager(PlayerStatus status, bool isPlayer)
+    {
+        if (!isPlayer || status == null) return;
+
+        DialogueManager dialogueManager = DialogueManager.Instance ?? FindAnyObjectByType<DialogueManager>();
+        if (dialogueManager != null)
+        {
+            dialogueManager.BindPlayerStatus(status);
         }
     }
 
@@ -238,3 +252,4 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
