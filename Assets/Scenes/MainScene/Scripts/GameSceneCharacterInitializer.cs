@@ -28,6 +28,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         var selected = CharacterSelectionState.SelectedAnimal;
         var selectedRoot = FindAnimalRoot(selected);
         var selectedCamera = ConfigureCameras(selected, selectedRoot);
+        int enemyCount = 0;
 
         foreach (SelectableAnimal animal in System.Enum.GetValues(typeof(SelectableAnimal)))
         {
@@ -41,7 +42,13 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             PlayerStatus status = ConfigurePlayerStatus(root, isPlayer);
             ConfigureShooter(root, status, selectedCamera, isPlayer);
             ConfigureDialogueManager(status, isPlayer);
+            if (ConfigureEnemyStatus(root, isPlayer))
+            {
+                enemyCount++;
+            }
         }
+
+        EnemyKillTracker.InitializeForScene(enemyCount);
 
         if (selectedCamera != null && selectedRoot != null)
         {
@@ -252,6 +259,29 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 
+    private static bool ConfigureEnemyStatus(GameObject root, bool isPlayer)
+    {
+        var enemyStatus = root.GetComponent<EnemyStatus>();
+
+        if (isPlayer)
+        {
+            if (enemyStatus != null)
+            {
+                enemyStatus.enabled = false;
+            }
+
+            return false;
+        }
+
+        if (enemyStatus == null)
+        {
+            enemyStatus = root.AddComponent<EnemyStatus>();
+        }
+
+        enemyStatus.enabled = true;
+        enemyStatus.ResetEnemy();
+        return true;
+    }
     private static void SetTagSafely(GameObject root, string tagName)
     {
         try
@@ -264,6 +294,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 

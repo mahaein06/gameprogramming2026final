@@ -1,0 +1,274 @@
+﻿using System.Collections;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class EnemyStatus : MonoBehaviour
+{
+    private const int BulletDamage = 10;
+    private const string BulletTag = "Bullet";
+
+    [SerializeField] private int maxHP = 100;
+    [SerializeField] private int currentHP = 100;
+    [SerializeField] private float deathDuration = 2f;
+    [SerializeField] private float fallDegrees = 90f;
+    [SerializeField] private Vector3 hpBarOffset = new Vector3(0f, 2.2f, 0f);
+    [SerializeField] private Vector2 hpBarSize = new Vector2(1.4f, 0.16f);
+
+    private Slider hpSlider;
+    private GameObject hpBarRoot;
+    private Renderer[] renderers;
+    private bool isDead;
+
+    private void Awake()
+    {
+        currentHP = Mathf.Clamp(currentHP, 0, maxHP);
+        renderers = GetComponentsInChildren<Renderer>(true);
+        EnsureHPBar();
+        UpdateHPUI();
+    }
+
+    private void OnEnable()
+    {
+        if (Application.isPlaying)
+        {
+            ResetEnemy();
+        }
+    }
+
+    private void LateUpdate()
+    {
+        UpdateHPBarPose();
+    }
+
+    public void ResetEnemy()
+    {
+        StopAllCoroutines();
+        isDead = false;
+        currentHP = maxHP;
+        renderers = GetComponentsInChildren<Renderer>(true);
+        EnsureHPBar();
+        RestoreRendererAlpha();
+        SetHPBarVisible(true);
+        UpdateHPUI();
+    }
+
+    public void TakeDamage(int damage)
+    {
+        if (!enabled || isDead || damage <= 0) return;
+
+        currentHP = Mathf.Max(0, currentHP - damage);
+        UpdateHPUI();
+
+        if (currentHP <= 0)
+        {
+            StartCoroutine(DieRoutine());
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        HandleBulletHit(other.gameObject);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        HandleBulletHit(collision.gameObject);
+    }
+
+    private void HandleBulletHit(GameObject hitObject)
+    {
+        if (!enabled || isDead || hitObject == null || !hitObject.CompareTag(BulletTag)) return;
+
+        TakeDamage(BulletDamage);
+        Destroy(hitObject);
+    }
+
+    private IEnumerator DieRoutine()
+    {
+        if (isDead) yield break;
+        isDead = true;
+        SetHPBarVisible(false);
+        EnemyKillTracker.NotifyEnemyKilled(this);
+
+        Vector3 pivot = CalculateFootPivot();
+        Vector3 fallAxis = transform.forward;
+        float elapsed = 0f;
+        float rotated = 0f;
+
+        while (elapsed < deathDuration)
+        {
+            float nextElapsed = Mathf.Min(deathDuration, elapsed + Time.deltaTime);
+            float t = deathDuration > 0f ? nextElapsed / deathDuration : 1f;
+            float targetAngle = Mathf.SmoothStep(0f, fallDegrees, t);
+            float deltaAngle = targetAngle - rotated;
+
+            transform.RotateAround(pivot, fallAxis, -deltaAngle);
+            rotated = targetAngle;
+            elapsed = nextElapsed;
+
+            SetRendererAlpha(1f - t);
+            yield return null;
+        }
+
+        gameObject.SetActive(false);
+    }
+
+    private Vector3 CalculateFootPivot()
+    {
+        Bounds bounds = GetRendererBounds();
+        Vector3 right = transform.right;
+        float lowestY = bounds.min.y;
+        float bestScore = float.NegativeInfinity;
+        Vector3 bestPoint = bounds.center;
+        bool found = false;
+
+        foreach (Transform child in GetComponentsInChildren<Transform>(true))
+        {
+            Vector3 point = child.position;
+            if (point.y > lowestY + 0.25f) continue;
+
+            float rightScore = Vector3.Dot(point - bounds.center, right);
+            float floorScore = 1f - Mathf.Abs(point.y - lowestY);
+            float score = rightScore + floorScore;
+            if (!found || score > bestScore)
+            {
+                bestScore = score;
+                bestPoint = point;
+                found = true;
+            }
+        }
+
+        if (found)
+        {
+            bestPoint.y = lowestY;
+            return bestPoint;
+        }
+
+        return bounds.center + right * bounds.extents.x + Vector3.down * bounds.extents.y;
+    }
+
+    private Bounds GetRendererBounds()
+    {
+        Renderer[] currentRenderers = renderers != null && renderers.Length > 0 ? renderers : GetComponentsInChildren<Renderer>(true);
+        bool hasBounds = false;
+        Bounds bounds = new Bounds(transform.position, Vector3.one);
+
+        foreach (Renderer renderer in currentRenderers)
+        {
+            if (renderer == null || renderer.GetComponentInParent<Canvas>() != null) continue;
+
+            if (!hasBounds)
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        return bounds;
+    }
+
+    private void EnsureHPBar()
+    {
+        if (hpSlider != null) return;
+
+        GameObject source = GameObject.Find("HPBar");
+        if (source != null)
+        {
+            hpBarRoot = Instantiate(source);
+            hpBarRoot.name = $"{name}_EnemyHPBar";
+            hpBarRoot.transform.SetParent(transform, false);
+            hpSlider = hpBarRoot.GetComponent<Slider>();
+        }
+
+        if (hpSlider == null)
+        {
+            hpBarRoot = new GameObject($"{name}_EnemyHPBar", typeof(RectTransform), typeof(Canvas), typeof(Slider));
+            hpBarRoot.transform.SetParent(transform, false);
+            hpSlider = hpBarRoot.GetComponent<Slider>();
+        }
+
+        Canvas canvas = hpBarRoot.GetComponent<Canvas>();
+        if (canvas == null) canvas = hpBarRoot.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = 100;
+
+        RectTransform rect = hpBarRoot.GetComponent<RectTransform>();
+        if (rect != null)
+        {
+            rect.sizeDelta = hpBarSize;
+            rect.localScale = Vector3.one;
+        }
+
+        hpSlider.minValue = 0;
+        hpSlider.maxValue = maxHP;
+        hpSlider.direction = Slider.Direction.LeftToRight;
+        SetFillColor(Color.red);
+        UpdateHPBarPose();
+    }
+
+    private void SetFillColor(Color color)
+    {
+        if (hpSlider == null || hpSlider.fillRect == null) return;
+
+        Image fill = hpSlider.fillRect.GetComponent<Image>();
+        if (fill != null)
+        {
+            fill.color = color;
+        }
+    }
+
+    private void UpdateHPUI()
+    {
+        if (hpSlider == null) return;
+        hpSlider.maxValue = maxHP;
+        hpSlider.value = currentHP;
+    }
+
+    private void UpdateHPBarPose()
+    {
+        if (hpBarRoot == null) return;
+
+        hpBarRoot.transform.position = transform.position + hpBarOffset;
+        Camera camera = Camera.main;
+        if (camera != null)
+        {
+            hpBarRoot.transform.rotation = Quaternion.LookRotation(hpBarRoot.transform.position - camera.transform.position, Vector3.up);
+        }
+    }
+
+    private void SetHPBarVisible(bool visible)
+    {
+        if (hpBarRoot != null)
+        {
+            hpBarRoot.SetActive(visible);
+        }
+    }
+
+    private void RestoreRendererAlpha()
+    {
+        SetRendererAlpha(1f);
+    }
+
+    private void SetRendererAlpha(float alpha)
+    {
+        if (renderers == null) return;
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null || renderer.GetComponentInParent<Canvas>() != null) continue;
+
+            foreach (Material material in renderer.materials)
+            {
+                if (material == null || !material.HasProperty("_Color")) continue;
+                Color color = material.color;
+                color.a = alpha;
+                material.color = color;
+            }
+        }
+    }
+}
