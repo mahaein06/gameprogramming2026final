@@ -59,10 +59,13 @@ namespace ithappy.Animals_FREE
             ResetFireRotationOffset();
         }
 
-        private static GameObject LoadBulletPrefab()
+        private static GameObject LoadBulletPrefab(bool useBullet2)
         {
 #if UNITY_EDITOR
-            return AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Marpa Studio/Built-in/Prefab/Bullet.prefab");
+            string path = useBullet2
+                ? "Assets/Marpa Studio/Built-In/Prefab/Bullet2.prefab"
+                : "Assets/Marpa Studio/Built-In/Prefab/Bullet.prefab";
+            return AssetDatabase.LoadAssetAtPath<GameObject>(path);
 #else
             return null;
 #endif
@@ -115,10 +118,25 @@ namespace ithappy.Animals_FREE
 
         private void EnsureBulletPrefab()
         {
+            bool useBullet2 = ShouldUseBullet2Prefab();
+            GameObject desiredPrefab = LoadBulletPrefab(useBullet2);
+
+            if (desiredPrefab != null)
+            {
+                m_BulletPrefab = desiredPrefab;
+                return;
+            }
+
             if (m_BulletPrefab == null)
             {
-                m_BulletPrefab = LoadBulletPrefab();
+                Debug.LogWarning($"Bullet prefab was not found for {name}. Check Assets/Marpa Studio/Built-In/Prefab.");
             }
+        }
+
+        private bool ShouldUseBullet2Prefab()
+        {
+            return !string.Equals(gameObject.name, "Dog", System.StringComparison.OrdinalIgnoreCase)
+                && !gameObject.name.StartsWith("Dog ", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private void EnsureFireTransform()
@@ -389,3 +407,4 @@ namespace ithappy.Animals_FREE
         }
     }
 }
+

@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -7,7 +7,7 @@ public class PlayerStatus : MonoBehaviour
 {
     private const int BulletDamage = 10;
     private const string BulletTag = "Bullet";
-    private const string EndingSceneName = "EndingScene";
+    private const string LoseSceneName = "LoseScene";
 
     [Header("HP")]
     public int maxHP = 100;
@@ -65,7 +65,7 @@ public class PlayerStatus : MonoBehaviour
 
         if (currentHP <= 0)
         {
-            SceneManager.LoadScene(EndingSceneName);
+            SceneManager.LoadScene(LoseSceneName);
         }
     }
 
@@ -119,10 +119,23 @@ public class PlayerStatus : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag(BulletTag)) return;
+        HandleBulletHit(other.gameObject);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        HandleBulletHit(collision.gameObject);
+    }
+
+    private void HandleBulletHit(GameObject hitObject)
+    {
+        if (hitObject == null || !hitObject.CompareTag(BulletTag)) return;
 
         TakeDamage(BulletDamage);
-        Destroy(other.gameObject);
+        Destroy(hitObject);
     }
 }
+
+
+
 
