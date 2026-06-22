@@ -36,6 +36,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
 
             bool isPlayer = animal == selected;
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
+            ConfigureHorseFrontLegStabilizer(root, animal);
             ConfigureInput(root, selectedCamera, isPlayer);
             PlayerStatus status = ConfigurePlayerStatus(root, isPlayer);
             ConfigureShooter(root, status, selectedCamera, isPlayer);
@@ -178,6 +179,16 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 
+
+    private static void ConfigureHorseFrontLegStabilizer(GameObject root, SelectableAnimal animal)
+    {
+        if (animal != SelectableAnimal.Horse || root == null) return;
+
+        if (root.GetComponent<HorseFrontLegStabilizer>() == null)
+        {
+            root.AddComponent<HorseFrontLegStabilizer>();
+        }
+    }
     private static void ConfigureInput(GameObject root, ThirdPersonCamera camera, bool isPlayer)
     {
         var input = root.GetComponent<MovePlayerInput>();
@@ -253,5 +264,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
+
 
 
