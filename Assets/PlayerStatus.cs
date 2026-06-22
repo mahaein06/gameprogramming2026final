@@ -131,10 +131,16 @@ public class PlayerStatus : MonoBehaviour
     {
         if (hitObject == null || !hitObject.CompareTag(BulletTag)) return;
 
+        EnemyBullet enemyBullet = hitObject.GetComponent<EnemyBullet>();
+        if (enemyBullet != null) return;
+
         TakeDamage(BulletDamage);
         Destroy(hitObject);
     }
 }
+
+
+
 
 
 

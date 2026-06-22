@@ -1,5 +1,6 @@
 ﻿using ithappy.Animals_FREE;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
 public class GameSceneCharacterInitializer : MonoBehaviour
@@ -46,6 +47,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             {
                 enemyCount++;
             }
+            ConfigureEnemyAI(root, selectedRoot, isPlayer);
         }
 
         EnemyKillTracker.InitializeForScene(enemyCount);
@@ -282,6 +284,48 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         enemyStatus.ResetEnemy();
         return true;
     }
+    private static void ConfigureEnemyAI(GameObject root, GameObject playerRoot, bool isPlayer)
+    {
+        var ai = root.GetComponent<EnemyAI>();
+        var agent = root.GetComponent<NavMeshAgent>();
+
+        if (isPlayer)
+        {
+            if (ai != null)
+            {
+                ai.enabled = false;
+            }
+
+            if (agent != null)
+            {
+                agent.enabled = false;
+            }
+
+            return;
+        }
+
+        if (agent == null)
+        {
+            agent = root.AddComponent<NavMeshAgent>();
+        }
+
+        agent.enabled = true;
+        agent.speed = Mathf.Max(agent.speed, 3.5f);
+        agent.angularSpeed = Mathf.Max(agent.angularSpeed, 360f);
+        agent.acceleration = Mathf.Max(agent.acceleration, 12f);
+        agent.stoppingDistance = Mathf.Max(agent.stoppingDistance, 2.5f);
+
+        if (ai == null)
+        {
+            ai = root.AddComponent<EnemyAI>();
+        }
+
+        ai.enabled = true;
+        if (playerRoot != null)
+        {
+            ai.BindPlayer(playerRoot.transform);
+        }
+    }
     private static void SetTagSafely(GameObject root, string tagName)
     {
         try
@@ -294,6 +338,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 

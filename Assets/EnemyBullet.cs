@@ -6,12 +6,22 @@ public class EnemyBullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag("Player")) return;
+        HandleHit(other.gameObject);
+    }
 
-        PlayerStatus status = other.GetComponent<PlayerStatus>();
+    private void OnCollisionEnter(Collision collision)
+    {
+        HandleHit(collision.gameObject);
+    }
+
+    private void HandleHit(GameObject hitObject)
+    {
+        if (hitObject == null || !hitObject.CompareTag("Player")) return;
+
+        PlayerStatus status = hitObject.GetComponent<PlayerStatus>();
         if (status == null)
         {
-            status = other.GetComponentInParent<PlayerStatus>();
+            status = hitObject.GetComponentInParent<PlayerStatus>();
         }
 
         if (status != null)
@@ -20,7 +30,7 @@ public class EnemyBullet : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("EnemyBullet: PlayerStatus was not found on the Player.", other);
+            Debug.LogWarning("EnemyBullet: PlayerStatus was not found on the Player.", hitObject);
         }
 
         Destroy(gameObject);

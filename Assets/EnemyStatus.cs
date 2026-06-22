@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.UI;
 
 public class EnemyStatus : MonoBehaviour
@@ -18,6 +19,8 @@ public class EnemyStatus : MonoBehaviour
     private GameObject hpBarRoot;
     private Renderer[] renderers;
     private bool isDead;
+
+    public bool IsDead => isDead;
 
     private void Awake()
     {
@@ -78,6 +81,7 @@ public class EnemyStatus : MonoBehaviour
     private void HandleBulletHit(GameObject hitObject)
     {
         if (!enabled || isDead || hitObject == null || !hitObject.CompareTag(BulletTag)) return;
+        if (hitObject.GetComponent<EnemyBullet>() != null) return;
 
         TakeDamage(BulletDamage);
         Destroy(hitObject);
@@ -87,6 +91,7 @@ public class EnemyStatus : MonoBehaviour
     {
         if (isDead) yield break;
         isDead = true;
+        DisableDeathBehaviours();
         SetHPBarVisible(false);
         EnemyKillTracker.NotifyEnemyKilled(this);
 
@@ -113,6 +118,20 @@ public class EnemyStatus : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    private void DisableDeathBehaviours()
+    {
+        EnemyAI ai = GetComponent<EnemyAI>();
+        if (ai != null)
+        {
+            ai.enabled = false;
+        }
+
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        if (agent != null)
+        {
+            agent.enabled = false;
+        }
+    }
     private Vector3 CalculateFootPivot()
     {
         Bounds bounds = GetRendererBounds();
@@ -272,3 +291,5 @@ public class EnemyStatus : MonoBehaviour
         }
     }
 }
+
+
