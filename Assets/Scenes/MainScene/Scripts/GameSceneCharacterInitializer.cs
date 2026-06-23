@@ -42,6 +42,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
 
             bool isPlayer = animal == selected;
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
+            ConfigureMovementComponents(root, isPlayer);
             ConfigureHorseFrontLegStabilizer(root, animal);
             ConfigureInput(root, selectedCamera, isPlayer);
             PlayerStatus status = ConfigurePlayerStatus(root, isPlayer);
@@ -253,6 +254,28 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     }
 
 
+    private static void ConfigureMovementComponents(GameObject root, bool isPlayer)
+    {
+        if (root == null) return;
+
+        var controller = root.GetComponent<CharacterController>();
+        if (controller != null)
+        {
+            controller.enabled = isPlayer;
+        }
+
+        var mover = root.GetComponent<CreatureMover>();
+        if (mover != null)
+        {
+            mover.enabled = isPlayer;
+        }
+
+        var agent = root.GetComponent<NavMeshAgent>();
+        if (agent != null && isPlayer)
+        {
+            agent.enabled = false;
+        }
+    }
     private static void ConfigureHorseFrontLegStabilizer(GameObject root, SelectableAnimal animal)
     {
         if (animal != SelectableAnimal.Horse || root == null) return;
@@ -384,24 +407,22 @@ public class GameSceneCharacterInitializer : MonoBehaviour
 
         if (agent == null)
         {
-            if (!TrySnapRootToNavMesh(root, 8f))
-            {
-                return;
-            }
-
             agent = root.AddComponent<NavMeshAgent>();
         }
 
-        if (!agent.enabled && !TrySnapRootToNavMesh(root, 8f))
-        {
-            return;
-        }
-
         agent.enabled = true;
+        agent.updatePosition = true;
+        agent.updateRotation = true;
         agent.speed = Mathf.Max(agent.speed, 3.5f);
         agent.angularSpeed = Mathf.Max(agent.angularSpeed, 360f);
         agent.acceleration = Mathf.Max(agent.acceleration, 12f);
         agent.stoppingDistance = Mathf.Max(agent.stoppingDistance, 2.5f);
+
+        if (!TryPlaceAgentOnNavMesh(root, agent, 8f, 0.75f))
+        {
+            agent.enabled = false;
+            return;
+        }
 
         if (ai == null)
         {
@@ -414,17 +435,30 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             ai.BindPlayer(playerRoot.transform);
         }
     }
-    private static bool TrySnapRootToNavMesh(GameObject root, float maxDistance)
+    private static bool TryPlaceAgentOnNavMesh(GameObject root, NavMeshAgent agent, float maxDistance, float maxHorizontalShift)
     {
-        if (root == null) return false;
-        if (NavMesh.SamplePosition(root.transform.position, out NavMeshHit hit, maxDistance, NavMesh.AllAreas))
+        if (root == null || agent == null) return false;
+        if (agent.isOnNavMesh) return true;
+
+        Vector3 originalPosition = root.transform.position;
+        Quaternion originalRotation = root.transform.rotation;
+        if (!NavMesh.SamplePosition(originalPosition, out NavMeshHit hit, maxDistance, NavMesh.AllAreas))
         {
-            root.transform.position = hit.position;
-            return true;
+            Debug.LogWarning($"Enemy '{root.name}' is too far from the NavMesh. Move it onto baked terrain in the Scene view.", root);
+            return false;
         }
 
-        Debug.LogWarning($"Enemy '{root.name}' is too far from the NavMesh. NavMeshAgent was not enabled.", root);
-        return false;
+        Vector2 horizontalShift = new Vector2(hit.position.x - originalPosition.x, hit.position.z - originalPosition.z);
+        if (horizontalShift.magnitude > maxHorizontalShift)
+        {
+            Debug.LogWarning($"Enemy '{root.name}' is near a NavMesh, but the closest point is too far from its scene position. Move it closer to walkable terrain.", root);
+            return false;
+        }
+
+        agent.baseOffset = originalPosition.y - hit.position.y;
+        bool warped = agent.Warp(hit.position);
+        root.transform.rotation = originalRotation;
+        return warped && agent.isOnNavMesh;
     }
     private static void SetTagSafely(GameObject root, string tagName)
     {
@@ -438,6 +472,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
+
 
 
 
