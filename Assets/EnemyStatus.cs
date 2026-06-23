@@ -204,23 +204,24 @@ public class EnemyStatus : MonoBehaviour
 
     private void EnsureHPBar()
     {
-        if (hpSlider != null && hpBarRoot != null) return;
         if (hpSlider != null && hpBarRoot == null)
         {
             hpBarRoot = hpSlider.gameObject;
-            return;
         }
 
-        GameObject source = GameObject.Find("HPBar");
-        if (source != null)
+        if (hpSlider == null || hpBarRoot == null)
         {
-            hpBarRoot = Instantiate(source);
-            hpBarRoot.name = $"{name}_EnemyHPBar";
-            hpBarRoot.transform.SetParent(transform, false);
-            hpSlider = hpBarRoot.GetComponent<Slider>();
+            GameObject source = GameObject.Find("HPBar");
+            if (source != null)
+            {
+                hpBarRoot = Instantiate(source);
+                hpBarRoot.name = $"{name}_EnemyHPBar";
+                hpBarRoot.transform.SetParent(transform, false);
+                hpSlider = hpBarRoot.GetComponent<Slider>();
+            }
         }
 
-        if (hpSlider == null)
+        if (hpSlider == null || hpBarRoot == null)
         {
             hpBarRoot = new GameObject($"{name}_EnemyHPBar", typeof(RectTransform), typeof(Canvas), typeof(Slider));
             hpBarRoot.transform.SetParent(transform, false);
@@ -241,13 +242,14 @@ public class EnemyStatus : MonoBehaviour
             rect.localScale = Vector3.one;
         }
 
+        RepairSliderVisuals();
+
         hpSlider.minValue = 0;
         hpSlider.maxValue = maxHP;
         hpSlider.direction = Slider.Direction.LeftToRight;
         SetFillColor(Color.red);
         UpdateHPBarPose();
     }
-
     private void CreateSliderVisuals(Transform root, Slider slider)
     {
         RectTransform rootRect = root.GetComponent<RectTransform>();
@@ -284,6 +286,73 @@ public class EnemyStatus : MonoBehaviour
 
         slider.targetGraphic = fillObject.GetComponent<Image>();
         slider.fillRect = fillRect;
+    }
+    private void RepairSliderVisuals()
+    {
+        if (hpBarRoot == null || hpSlider == null) return;
+
+        RectTransform rootRect = hpBarRoot.GetComponent<RectTransform>();
+        Transform fillArea = hpBarRoot.transform.Find("Fill Area");
+        if (fillArea == null)
+        {
+            GameObject fillAreaObject = new GameObject("Fill Area", typeof(RectTransform));
+            fillAreaObject.transform.SetParent(hpBarRoot.transform, false);
+            fillArea = fillAreaObject.transform;
+        }
+
+        RectTransform fillAreaRect = fillArea.GetComponent<RectTransform>();
+        if (fillAreaRect != null)
+        {
+            fillAreaRect.anchorMin = Vector2.zero;
+            fillAreaRect.anchorMax = Vector2.one;
+            fillAreaRect.offsetMin = Vector2.zero;
+            fillAreaRect.offsetMax = Vector2.zero;
+        }
+
+        Transform fill = fillArea.Find("Fill");
+        if (fill == null)
+        {
+            foreach (Image image in hpBarRoot.GetComponentsInChildren<Image>(true))
+            {
+                if (image.name == "Fill")
+                {
+                    fill = image.transform;
+                    fill.SetParent(fillArea, false);
+                    break;
+                }
+            }
+        }
+
+        if (fill == null)
+        {
+            GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+            fillObject.transform.SetParent(fillArea, false);
+            fill = fillObject.transform;
+        }
+
+        RectTransform fillRect = fill.GetComponent<RectTransform>();
+        if (fillRect != null)
+        {
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.one;
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+            fillRect.localScale = Vector3.one;
+        }
+
+        Image fillImage = fill.GetComponent<Image>();
+        if (fillImage == null) fillImage = fill.gameObject.AddComponent<Image>();
+        fillImage.enabled = true;
+        fillImage.color = Color.red;
+        fillImage.raycastTarget = false;
+
+        hpSlider.fillRect = fillRect;
+        hpSlider.targetGraphic = fillImage;
+
+        if (rootRect != null)
+        {
+            rootRect.sizeDelta = hpBarSize;
+        }
     }
     private void SetFillColor(Color color)
     {
@@ -346,6 +415,7 @@ public class EnemyStatus : MonoBehaviour
         }
     }
 }
+
 
 
 
