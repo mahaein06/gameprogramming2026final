@@ -383,7 +383,17 @@ public class GameSceneCharacterInitializer : MonoBehaviour
 
         if (agent == null)
         {
+            if (!TrySnapRootToNavMesh(root, 8f))
+            {
+                return;
+            }
+
             agent = root.AddComponent<NavMeshAgent>();
+        }
+
+        if (!agent.enabled && !TrySnapRootToNavMesh(root, 8f))
+        {
+            return;
         }
 
         agent.enabled = true;
@@ -403,6 +413,18 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             ai.BindPlayer(playerRoot.transform);
         }
     }
+    private static bool TrySnapRootToNavMesh(GameObject root, float maxDistance)
+    {
+        if (root == null) return false;
+        if (NavMesh.SamplePosition(root.transform.position, out NavMeshHit hit, maxDistance, NavMesh.AllAreas))
+        {
+            root.transform.position = hit.position;
+            return true;
+        }
+
+        Debug.LogWarning($"Enemy '{root.name}' is too far from the NavMesh. NavMeshAgent was not enabled.", root);
+        return false;
+    }
     private static void SetTagSafely(GameObject root, string tagName)
     {
         try
@@ -415,6 +437,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
+
 
 
 

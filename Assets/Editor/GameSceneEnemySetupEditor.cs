@@ -20,7 +20,7 @@ public static class GameSceneEnemySetupEditor
     [MenuItem("Tools/GameScene/Ensure Editable Enemy Setup")]
     public static void EnsureGameSceneEnemySetup()
     {
-        if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+        if (Application.isPlaying || EditorApplication.isPlaying || EditorApplication.isPlayingOrWillChangePlaymode) return;
 
         Scene scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || scene.name != "GameScene") return;
@@ -44,7 +44,7 @@ public static class GameSceneEnemySetupEditor
             }
         }
 
-        if (changed)
+        if (changed && !Application.isPlaying && !EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorSceneManager.MarkSceneDirty(scene);
         }
@@ -80,3 +80,6 @@ public static class GameSceneEnemySetupEditor
     }
 }
 #endif
+
+
+
