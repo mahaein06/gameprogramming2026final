@@ -41,6 +41,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
 
             bool isPlayer = animal == selected;
             LockCurrentY(root);
+            ConfigureVisualGrounding(root, animal);
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
             ConfigureMovementComponents(root, isPlayer);
             ConfigureHorseFrontLegStabilizer(root, animal);
@@ -266,6 +267,29 @@ public class GameSceneCharacterInitializer : MonoBehaviour
 
         yLock.CaptureCurrentY();
     }
+    private static void ConfigureVisualGrounding(GameObject root, SelectableAnimal animal)
+    {
+        if (root == null) return;
+
+        var snapper = root.GetComponent<VisualGroundSnapper>();
+        if (animal != SelectableAnimal.Tiger)
+        {
+            if (snapper != null)
+            {
+                snapper.enabled = false;
+            }
+
+            return;
+        }
+
+        if (snapper == null)
+        {
+            snapper = root.AddComponent<VisualGroundSnapper>();
+        }
+
+        snapper.enabled = true;
+        snapper.Configure(null, 0.02f);
+    }
     private static void ConfigureMovementComponents(GameObject root, bool isPlayer)
     {
         if (root == null) return;
@@ -422,6 +446,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 
