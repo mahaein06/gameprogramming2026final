@@ -31,11 +31,13 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private GameObject bulletPrefab;
     [SerializeField] private Transform firePoint;
     [SerializeField] private bool rotateWeaponToAim = true;
+    [SerializeField] private bool restoreWeaponOutsideAttack = true;
 
     [Header("Patrol")]
     [SerializeField] private Transform[] patrolPoints;
     [SerializeField] private float patrolPointTolerance = 1.2f;
     [SerializeField] private float randomPatrolRadius = 8f;
+    [SerializeField] private float navMeshSnapDistance = 6f;
 
     [Header("Runtime")]
     [SerializeField] private EnemyState state = EnemyState.Patrol;
@@ -69,6 +71,8 @@ public class EnemyAI : MonoBehaviour
     private bool hasRandomPatrolTarget;
     private Quaternion muzzleRotationOffset = Quaternion.identity;
     private bool hasMuzzleRotationOffset;
+    private Quaternion defaultFirePointLocalRotation = Quaternion.identity;
+    private bool hasDefaultFirePointRotation;
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -105,11 +109,11 @@ public class EnemyAI : MonoBehaviour
         if (player == null)
         {
             SetState(EnemyState.Patrol);
+            RestoreWeaponAim();
             Patrol();
             return;
         }
 
-        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
         bool canDetectPlayer = IsPlayerWithinView(detectRange, detectAngle);
         bool canAttackPlayer = IsPlayerWithinView(attackRange, attackAngle);
 
@@ -121,11 +125,13 @@ public class EnemyAI : MonoBehaviour
         else if (canDetectPlayer)
         {
             SetState(EnemyState.Chase);
+            RestoreWeaponAim();
             Chase();
         }
         else
         {
             SetState(EnemyState.Patrol);
+            RestoreWeaponAim();
             Patrol();
         }
     }
@@ -204,9 +210,24 @@ public class EnemyAI : MonoBehaviour
         Quaternion targetRotation = Quaternion.LookRotation(fireDirection, Vector3.up) * muzzleRotationOffset;
         firePoint.rotation = Quaternion.RotateTowards(firePoint.rotation, targetRotation, 720f * Time.deltaTime);
     }
+    private void CacheDefaultFirePointRotation()
+    {
+        if (hasDefaultFirePointRotation || firePoint == null || firePoint == transform) return;
+
+        defaultFirePointLocalRotation = firePoint.localRotation;
+        hasDefaultFirePointRotation = true;
+    }
+
+    private void RestoreWeaponAim()
+    {
+        if (!restoreWeaponOutsideAttack || !hasDefaultFirePointRotation || firePoint == null || firePoint == transform) return;
+
+        firePoint.localRotation = Quaternion.RotateTowards(firePoint.localRotation, defaultFirePointLocalRotation, 720f * Time.deltaTime);
+    }
     private void CacheMuzzleRotationOffset()
     {
         if (hasMuzzleRotationOffset || firePoint == null) return;
+        CacheDefaultFirePointRotation();
 
         Vector3 referenceDirection = GetFireDirection();
         if (referenceDirection.sqrMagnitude < 0.0001f)
@@ -329,7 +350,16 @@ public class EnemyAI : MonoBehaviour
 
     private bool CanUseAgent()
     {
-        return agent != null && agent.enabled && agent.isOnNavMesh;
+        if (agent == null || !agent.enabled) return false;
+        if (agent.isOnNavMesh) return true;
+
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, navMeshSnapDistance, NavMesh.AllAreas))
+        {
+            agent.Warp(hit.position);
+            return agent.isOnNavMesh;
+        }
+
+        return false;
     }
 
     private void StopAgent()
@@ -341,7 +371,7 @@ public class EnemyAI : MonoBehaviour
 
     private bool TryFindRandomPatrolTarget(out Vector3 target)
     {
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 24; i++)
         {
             Vector2 randomCircle = Random.insideUnitCircle * randomPatrolRadius;
             Vector3 candidate = transform.position + new Vector3(randomCircle.x, 0f, randomCircle.y);
@@ -382,6 +412,7 @@ public class EnemyAI : MonoBehaviour
         if (firePoint != null) return;
 
         firePoint = FindWeaponCandidate();
+        CacheDefaultFirePointRotation();
         if (firePoint == null)
         {
             rotateWeaponToAim = false;
@@ -447,6 +478,7 @@ public class EnemyAI : MonoBehaviour
         }
     }
 }
+
 
 
 
