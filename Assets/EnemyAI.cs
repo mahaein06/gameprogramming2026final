@@ -15,7 +15,9 @@ public class EnemyAI : MonoBehaviour
 
     [Header("Ranges")]
     [SerializeField] private float detectRange = 14f;
+    [SerializeField] private float detectAngle = 100f;
     [SerializeField] private float attackRange = 7f;
+    [SerializeField] private float attackAngle = 70f;
 
     [Header("Attack")]
     [SerializeField] private float fireRate = 1f;
@@ -108,12 +110,15 @@ public class EnemyAI : MonoBehaviour
         }
 
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-        if (distanceToPlayer <= attackRange)
+        bool canDetectPlayer = IsPlayerWithinView(detectRange, detectAngle);
+        bool canAttackPlayer = IsPlayerWithinView(attackRange, attackAngle);
+
+        if (canAttackPlayer)
         {
             SetState(EnemyState.Attack);
             Attack();
         }
-        else if (distanceToPlayer <= detectRange)
+        else if (canDetectPlayer)
         {
             SetState(EnemyState.Chase);
             Chase();
@@ -297,6 +302,19 @@ public class EnemyAI : MonoBehaviour
         return direction.normalized;
     }
 
+    private bool IsPlayerWithinView(float range, float angle)
+    {
+        if (player == null) return false;
+
+        Vector3 direction = player.position - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f) return true;
+        if (direction.sqrMagnitude > range * range) return false;
+
+        float halfAngle = Mathf.Clamp(angle, 0f, 360f) * 0.5f;
+        float angleToPlayer = Vector3.Angle(transform.forward, direction.normalized);
+        return angleToPlayer <= halfAngle;
+    }
     private void FacePlayer()
     {
         if (player == null) return;
@@ -429,6 +447,7 @@ public class EnemyAI : MonoBehaviour
         }
     }
 }
+
 
 
 
