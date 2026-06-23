@@ -333,6 +333,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             if (enemyStatus != null)
             {
                 enemyStatus.enabled = false;
+                enemyStatus.SetEnemyHPBarVisible(false);
             }
 
             return false;
@@ -344,6 +345,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
 
         enemyStatus.enabled = true;
+        enemyStatus.EnsureEditableHPBar();
         enemyStatus.ResetEnemy();
         return true;
     }
@@ -401,6 +403,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
+
 
 
 

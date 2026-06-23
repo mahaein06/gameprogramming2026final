@@ -15,13 +15,25 @@ public class EnemyStatus : MonoBehaviour
     [SerializeField] private Vector3 hpBarOffset = new Vector3(0f, 2.2f, 0f);
     [SerializeField] private Vector2 hpBarSize = new Vector2(1.4f, 0.16f);
 
-    private Slider hpSlider;
-    private GameObject hpBarRoot;
+    [SerializeField] private Slider hpSlider;
+    [SerializeField] private GameObject hpBarRoot;
     private Renderer[] renderers;
     private bool isDead;
 
     public bool IsDead => isDead;
 
+    public void EnsureEditableHPBar()
+    {
+        renderers = GetComponentsInChildren<Renderer>(true);
+        EnsureHPBar();
+        SetHPBarVisible(true);
+        UpdateHPUI();
+    }
+
+    public void SetEnemyHPBarVisible(bool visible)
+    {
+        SetHPBarVisible(visible);
+    }
     private void Awake()
     {
         currentHP = Mathf.Clamp(currentHP, 0, maxHP);
@@ -192,7 +204,12 @@ public class EnemyStatus : MonoBehaviour
 
     private void EnsureHPBar()
     {
-        if (hpSlider != null) return;
+        if (hpSlider != null && hpBarRoot != null) return;
+        if (hpSlider != null && hpBarRoot == null)
+        {
+            hpBarRoot = hpSlider.gameObject;
+            return;
+        }
 
         GameObject source = GameObject.Find("HPBar");
         if (source != null)
@@ -208,6 +225,7 @@ public class EnemyStatus : MonoBehaviour
             hpBarRoot = new GameObject($"{name}_EnemyHPBar", typeof(RectTransform), typeof(Canvas), typeof(Slider));
             hpBarRoot.transform.SetParent(transform, false);
             hpSlider = hpBarRoot.GetComponent<Slider>();
+            CreateSliderVisuals(hpBarRoot.transform, hpSlider);
         }
 
         Canvas canvas = hpBarRoot.GetComponent<Canvas>();
@@ -230,6 +248,43 @@ public class EnemyStatus : MonoBehaviour
         UpdateHPBarPose();
     }
 
+    private void CreateSliderVisuals(Transform root, Slider slider)
+    {
+        RectTransform rootRect = root.GetComponent<RectTransform>();
+        if (rootRect != null)
+        {
+            rootRect.sizeDelta = hpBarSize;
+        }
+
+        GameObject backgroundObject = new GameObject("Background", typeof(RectTransform), typeof(Image));
+        backgroundObject.transform.SetParent(root, false);
+        RectTransform backgroundRect = backgroundObject.GetComponent<RectTransform>();
+        backgroundRect.anchorMin = Vector2.zero;
+        backgroundRect.anchorMax = Vector2.one;
+        backgroundRect.offsetMin = Vector2.zero;
+        backgroundRect.offsetMax = Vector2.zero;
+        backgroundObject.GetComponent<Image>().color = new Color(0.15f, 0.02f, 0.02f, 0.85f);
+
+        GameObject fillAreaObject = new GameObject("Fill Area", typeof(RectTransform));
+        fillAreaObject.transform.SetParent(root, false);
+        RectTransform fillAreaRect = fillAreaObject.GetComponent<RectTransform>();
+        fillAreaRect.anchorMin = Vector2.zero;
+        fillAreaRect.anchorMax = Vector2.one;
+        fillAreaRect.offsetMin = Vector2.zero;
+        fillAreaRect.offsetMax = Vector2.zero;
+
+        GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+        fillObject.transform.SetParent(fillAreaObject.transform, false);
+        RectTransform fillRect = fillObject.GetComponent<RectTransform>();
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = Vector2.one;
+        fillRect.offsetMin = Vector2.zero;
+        fillRect.offsetMax = Vector2.zero;
+        fillObject.GetComponent<Image>().color = Color.red;
+
+        slider.targetGraphic = fillObject.GetComponent<Image>();
+        slider.fillRect = fillRect;
+    }
     private void SetFillColor(Color color)
     {
         if (hpSlider == null || hpSlider.fillRect == null) return;
@@ -291,5 +346,8 @@ public class EnemyStatus : MonoBehaviour
         }
     }
 }
+
+
+
 
 
