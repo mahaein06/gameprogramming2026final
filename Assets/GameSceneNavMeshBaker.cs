@@ -18,7 +18,11 @@ public class GameSceneNavMeshBaker : MonoBehaviour
     [SerializeField] private Vector3 houseExclusionCenter = Vector3.zero;
     [SerializeField] private Vector3 houseExclusionSize = new Vector3(12f, 8f, 12f);
 
+    private const int RuntimeNavMeshLayer = 30;
+    private const string RuntimeFloorName = "Runtime_NavMesh_Floor";
+
     private NavMeshModifierVolume houseBlocker;
+    private BoxCollider runtimeFloorCollider;
 
     private void Awake()
     {
@@ -39,12 +43,18 @@ public class GameSceneNavMeshBaker : MonoBehaviour
     public void BuildNavMesh()
     {
         EnsureSetup();
-        if (surface != null)
+        if (surface == null) return;
+
+        SetRuntimeFloorEnabled(true);
+        try
         {
             surface.BuildNavMesh();
         }
+        finally
+        {
+            SetRuntimeFloorEnabled(false);
+        }
     }
-
     public static GameSceneNavMeshBaker EnsureRuntimeNavMesh()
     {
         GameSceneNavMeshBaker baker = FindAnyObjectByType<GameSceneNavMeshBaker>(FindObjectsInactive.Include);
@@ -121,10 +131,12 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         }
 
         UpdateBakeVolumeFromScene();
+        EnsureRuntimeFloor();
 
         surface.collectObjects = CollectObjects.Volume;
         surface.center = bakeVolumeCenter;
         surface.size = bakeVolumeSize;
+        surface.layerMask = 1 << RuntimeNavMeshLayer;
         surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
         surface.ignoreNavMeshAgent = true;
         surface.ignoreNavMeshObstacle = true;
@@ -195,6 +207,61 @@ public class GameSceneNavMeshBaker : MonoBehaviour
 
         bounds.Encapsulate(point);
     }
+    private void EnsureRuntimeFloor()
+    {
+        Bounds terrainBounds;
+        if (!TryGetTerrainBounds(out terrainBounds))
+        {
+            terrainBounds = new Bounds(transform.TransformPoint(bakeVolumeCenter), bakeVolumeSize);
+        }
+
+        Transform floorTransform = transform.Find(RuntimeFloorName);
+        if (floorTransform == null)
+        {
+            GameObject floorObject = new GameObject(RuntimeFloorName);
+            floorObject.transform.SetParent(transform, false);
+            floorTransform = floorObject.transform;
+        }
+
+        floorTransform.gameObject.layer = RuntimeNavMeshLayer;
+        floorTransform.position = terrainBounds.center;
+        floorTransform.rotation = Quaternion.identity;
+        floorTransform.localScale = Vector3.one;
+        floorTransform.hideFlags = HideFlags.DontSaveInBuild | HideFlags.DontSaveInEditor;
+
+        runtimeFloorCollider = floorTransform.GetComponent<BoxCollider>();
+        if (runtimeFloorCollider == null)
+        {
+            runtimeFloorCollider = floorTransform.gameObject.AddComponent<BoxCollider>();
+        }
+
+        runtimeFloorCollider.isTrigger = false;
+        runtimeFloorCollider.enabled = false;
+        runtimeFloorCollider.center = Vector3.zero;
+        runtimeFloorCollider.size = new Vector3(
+            Mathf.Max(terrainBounds.size.x, 1f),
+            Mathf.Max(terrainBounds.size.y + 0.25f, 0.25f),
+            Mathf.Max(terrainBounds.size.z, 1f));
+    }
+
+    private static bool TryGetTerrainBounds(out Bounds terrainBounds)
+    {
+        bool hasBounds = false;
+        terrainBounds = new Bounds(Vector3.zero, Vector3.zero);
+        foreach (TerrainCollider terrainCollider in FindObjectsByType<TerrainCollider>(FindObjectsInactive.Exclude))
+        {
+            EncapsulateBounds(ref terrainBounds, ref hasBounds, terrainCollider.bounds);
+        }
+
+        return hasBounds;
+    }
+    private void SetRuntimeFloorEnabled(bool enabled)
+    {
+        if (runtimeFloorCollider != null)
+        {
+            runtimeFloorCollider.enabled = enabled;
+        }
+    }
     private void EnsureHouseBlocker()
     {
         if (house == null) return;
@@ -210,6 +277,7 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         blockerTransform.localPosition = houseExclusionCenter;
         blockerTransform.localRotation = Quaternion.identity;
         blockerTransform.localScale = Vector3.one;
+        blockerTransform.gameObject.layer = RuntimeNavMeshLayer;
 
         houseBlocker = blockerTransform.GetComponent<NavMeshModifierVolume>();
         if (houseBlocker == null)
@@ -222,6 +290,10 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         houseBlocker.size = houseExclusionSize;
     }
 }
+
+
+
+
 
 
 
