@@ -270,8 +270,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     {
         if (root == null) return;
 
-        var agent = root.GetComponent<NavMeshAgent>();
-        if (agent != null)
+        foreach (var agent in root.GetComponentsInChildren<NavMeshAgent>(true))
         {
             agent.enabled = false;
         }
@@ -399,14 +398,14 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     }
     private static void ConfigureEnemyAI(GameObject root, GameObject playerRoot, bool isPlayer)
     {
-        var ai = root != null ? root.GetComponent<EnemyAI>() : null;
-        if (ai != null)
+        if (root == null) return;
+
+        foreach (var ai in root.GetComponentsInChildren<EnemyAI>(true))
         {
             ai.enabled = false;
         }
 
-        var agent = root != null ? root.GetComponent<NavMeshAgent>() : null;
-        if (agent != null)
+        foreach (var agent in root.GetComponentsInChildren<NavMeshAgent>(true))
         {
             agent.enabled = false;
         }
@@ -423,6 +422,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 
