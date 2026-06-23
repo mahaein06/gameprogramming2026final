@@ -45,6 +45,24 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         }
     }
 
+    public static GameSceneNavMeshBaker EnsureRuntimeNavMesh()
+    {
+        GameSceneNavMeshBaker baker = FindAnyObjectByType<GameSceneNavMeshBaker>(FindObjectsInactive.Include);
+        if (baker == null)
+        {
+            GameObject bakerObject = new GameObject("GameSceneNavMeshBaker");
+            baker = bakerObject.AddComponent<GameSceneNavMeshBaker>();
+        }
+
+        baker.EnsureSetup();
+        if (!baker.HasUsableNavMesh())
+        {
+            baker.BuildNavMesh();
+        }
+
+        return baker;
+    }
+
     public static GameSceneNavMeshBaker EnsureInScene()
     {
         GameSceneNavMeshBaker baker = FindAnyObjectByType<GameSceneNavMeshBaker>(FindObjectsInactive.Include);
@@ -68,6 +86,29 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         return baker;
     }
 
+    private bool HasUsableNavMesh()
+    {
+        string[] sampleObjectNames = { "Deer", "Horse", "Pinguin", "Penguin", "Dog", "Tiger" };
+        foreach (string objectName in sampleObjectNames)
+        {
+            GameObject target = GameObject.Find(objectName);
+            if (target != null && NavMesh.SamplePosition(target.transform.position, out _, 12f, NavMesh.AllAreas))
+            {
+                return true;
+            }
+        }
+
+        foreach (TerrainCollider terrainCollider in FindObjectsByType<TerrainCollider>(FindObjectsInactive.Exclude))
+        {
+            float sampleDistance = Mathf.Max(terrainCollider.bounds.extents.x, terrainCollider.bounds.extents.z);
+            if (NavMesh.SamplePosition(terrainCollider.bounds.center, out _, sampleDistance, NavMesh.AllAreas))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
     private void EnsureSetup()
     {
         if (surface == null)
@@ -181,6 +222,8 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         houseBlocker.size = houseExclusionSize;
     }
 }
+
+
 
 
 

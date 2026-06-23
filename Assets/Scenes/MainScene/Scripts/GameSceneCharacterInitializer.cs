@@ -26,6 +26,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     {
         if (scene.name != GameSceneName) return;
 
+        GameSceneNavMeshBaker.EnsureRuntimeNavMesh();
+
         DisableDuplicateAnimalRoots();
 
         var selected = CharacterSelectionState.SelectedAnimal;
@@ -436,6 +438,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 
