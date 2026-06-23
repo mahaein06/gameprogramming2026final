@@ -14,6 +14,7 @@ public class EnemyStatus : MonoBehaviour
     [SerializeField] private float fallDegrees = 90f;
     [SerializeField] private Vector3 hpBarOffset = new Vector3(0f, 2.2f, 0f);
     [SerializeField] private Vector2 hpBarSize = new Vector2(1.4f, 0.16f);
+    [SerializeField] private float hpBarBorder = 0.025f;
 
     [SerializeField] private Slider hpSlider;
     [SerializeField] private GameObject hpBarRoot;
@@ -265,15 +266,16 @@ public class EnemyStatus : MonoBehaviour
         backgroundRect.anchorMax = Vector2.one;
         backgroundRect.offsetMin = Vector2.zero;
         backgroundRect.offsetMax = Vector2.zero;
-        backgroundObject.GetComponent<Image>().color = new Color(0.15f, 0.02f, 0.02f, 0.85f);
+        Image backgroundImage = backgroundObject.GetComponent<Image>();
+        backgroundImage.color = Color.black;
+        backgroundImage.raycastTarget = false;
 
         GameObject fillAreaObject = new GameObject("Fill Area", typeof(RectTransform));
         fillAreaObject.transform.SetParent(root, false);
         RectTransform fillAreaRect = fillAreaObject.GetComponent<RectTransform>();
         fillAreaRect.anchorMin = Vector2.zero;
         fillAreaRect.anchorMax = Vector2.one;
-        fillAreaRect.offsetMin = Vector2.zero;
-        fillAreaRect.offsetMax = Vector2.zero;
+        ApplyFillAreaBorder(fillAreaRect);
 
         GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
         fillObject.transform.SetParent(fillAreaObject.transform, false);
@@ -287,11 +289,50 @@ public class EnemyStatus : MonoBehaviour
         slider.targetGraphic = fillObject.GetComponent<Image>();
         slider.fillRect = fillRect;
     }
+    private void ApplyFillAreaBorder(RectTransform fillAreaRect)
+    {
+        if (fillAreaRect == null) return;
+
+        float border = Mathf.Max(0f, hpBarBorder);
+        fillAreaRect.offsetMin = new Vector2(border, border);
+        fillAreaRect.offsetMax = new Vector2(-border, -border);
+    }
+
+    private void RepairBackgroundVisual()
+    {
+        if (hpBarRoot == null) return;
+
+        Transform background = hpBarRoot.transform.Find("Background");
+        if (background == null)
+        {
+            GameObject backgroundObject = new GameObject("Background", typeof(RectTransform), typeof(Image));
+            backgroundObject.transform.SetParent(hpBarRoot.transform, false);
+            backgroundObject.transform.SetAsFirstSibling();
+            background = backgroundObject.transform;
+        }
+
+        RectTransform backgroundRect = background.GetComponent<RectTransform>();
+        if (backgroundRect != null)
+        {
+            backgroundRect.anchorMin = Vector2.zero;
+            backgroundRect.anchorMax = Vector2.one;
+            backgroundRect.offsetMin = Vector2.zero;
+            backgroundRect.offsetMax = Vector2.zero;
+            backgroundRect.localScale = Vector3.one;
+        }
+
+        Image backgroundImage = background.GetComponent<Image>();
+        if (backgroundImage == null) backgroundImage = background.gameObject.AddComponent<Image>();
+        backgroundImage.enabled = true;
+        backgroundImage.color = Color.black;
+        backgroundImage.raycastTarget = false;
+    }
     private void RepairSliderVisuals()
     {
         if (hpBarRoot == null || hpSlider == null) return;
 
         RectTransform rootRect = hpBarRoot.GetComponent<RectTransform>();
+        RepairBackgroundVisual();
         Transform fillArea = hpBarRoot.transform.Find("Fill Area");
         if (fillArea == null)
         {
@@ -305,8 +346,7 @@ public class EnemyStatus : MonoBehaviour
         {
             fillAreaRect.anchorMin = Vector2.zero;
             fillAreaRect.anchorMax = Vector2.one;
-            fillAreaRect.offsetMin = Vector2.zero;
-            fillAreaRect.offsetMax = Vector2.zero;
+            ApplyFillAreaBorder(fillAreaRect);
         }
 
         Transform fill = fillArea.Find("Fill");
@@ -415,6 +455,9 @@ public class EnemyStatus : MonoBehaviour
         }
     }
 }
+
+
+
 
 
 
