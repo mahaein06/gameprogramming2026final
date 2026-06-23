@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
 
+[ExecuteAlways]
 public class EnemyStatus : MonoBehaviour
 {
     private const int BulletDamage = 10;
@@ -13,6 +14,7 @@ public class EnemyStatus : MonoBehaviour
     [SerializeField] private float deathDuration = 2f;
     [SerializeField] private float fallDegrees = 90f;
     [SerializeField] private Vector3 hpBarOffset = new Vector3(0f, 2.2f, 0f);
+    [SerializeField] private bool useManualHPBarPosition = true;
     [SerializeField] private Vector2 hpBarSize = new Vector2(1.4f, 0.16f);
     [SerializeField] private float hpBarBorder = 0.025f;
 
@@ -210,6 +212,8 @@ public class EnemyStatus : MonoBehaviour
             hpBarRoot = hpSlider.gameObject;
         }
 
+        bool createdHPBar = false;
+
         if (hpSlider == null || hpBarRoot == null)
         {
             GameObject source = GameObject.Find("HPBar");
@@ -218,7 +222,9 @@ public class EnemyStatus : MonoBehaviour
                 hpBarRoot = Instantiate(source);
                 hpBarRoot.name = $"{name}_EnemyHPBar";
                 hpBarRoot.transform.SetParent(transform, false);
+                hpBarRoot.transform.localPosition = hpBarOffset;
                 hpSlider = hpBarRoot.GetComponent<Slider>();
+                createdHPBar = true;
             }
         }
 
@@ -226,8 +232,10 @@ public class EnemyStatus : MonoBehaviour
         {
             hpBarRoot = new GameObject($"{name}_EnemyHPBar", typeof(RectTransform), typeof(Canvas), typeof(Slider));
             hpBarRoot.transform.SetParent(transform, false);
+            hpBarRoot.transform.localPosition = hpBarOffset;
             hpSlider = hpBarRoot.GetComponent<Slider>();
             CreateSliderVisuals(hpBarRoot.transform, hpSlider);
+            createdHPBar = true;
         }
 
         Canvas canvas = hpBarRoot.GetComponent<Canvas>();
@@ -240,7 +248,10 @@ public class EnemyStatus : MonoBehaviour
         if (rect != null)
         {
             rect.sizeDelta = hpBarSize;
-            rect.localScale = Vector3.one;
+            if (createdHPBar)
+            {
+                rect.localScale = Vector3.one;
+            }
         }
 
         RepairSliderVisuals();
@@ -416,14 +427,19 @@ public class EnemyStatus : MonoBehaviour
     {
         if (hpBarRoot == null) return;
 
-        hpBarRoot.transform.position = transform.position + hpBarOffset;
+        if (!useManualHPBarPosition)
+        {
+            hpBarRoot.transform.position = transform.position + hpBarOffset;
+        }
+
+        if (!Application.isPlaying) return;
+
         Camera camera = Camera.main;
         if (camera != null)
         {
             hpBarRoot.transform.rotation = Quaternion.LookRotation(hpBarRoot.transform.position - camera.transform.position, Vector3.up);
         }
     }
-
     private void SetHPBarVisible(bool visible)
     {
         if (hpBarRoot != null)
@@ -455,6 +471,7 @@ public class EnemyStatus : MonoBehaviour
         }
     }
 }
+
 
 
 
