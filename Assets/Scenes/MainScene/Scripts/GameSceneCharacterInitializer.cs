@@ -40,6 +40,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             if (root == null) continue;
 
             bool isPlayer = animal == selected;
+            LockCurrentY(root);
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
             ConfigureMovementComponents(root, isPlayer);
             ConfigureHorseFrontLegStabilizer(root, animal);
@@ -253,6 +254,18 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     }
 
 
+    private static void LockCurrentY(GameObject root)
+    {
+        if (root == null) return;
+
+        var yLock = root.GetComponent<FixedYPosition>();
+        if (yLock == null)
+        {
+            yLock = root.AddComponent<FixedYPosition>();
+        }
+
+        yLock.CaptureCurrentY();
+    }
     private static void ConfigureMovementComponents(GameObject root, bool isPlayer)
     {
         if (root == null) return;
@@ -410,6 +423,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 
