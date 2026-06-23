@@ -447,15 +447,36 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     {
         if (root == null) return;
 
-        var roamer = root.GetComponent<EnemyTerrainRoamer>();
-        if (roamer == null && !isPlayer)
+        GameObject model = GetRoamerTarget(root);
+        foreach (var existingRoamer in root.GetComponentsInChildren<EnemyTerrainRoamer>(true))
         {
-            roamer = root.AddComponent<EnemyTerrainRoamer>();
+            if (existingRoamer == null) continue;
+            if (isPlayer || existingRoamer.gameObject != model)
+            {
+                existingRoamer.SetActiveRoaming(false);
+            }
         }
 
-        if (roamer == null) return;
+        if (isPlayer || model == null) return;
 
-        roamer.SetActiveRoaming(!isPlayer);
+        var roamer = model.GetComponent<EnemyTerrainRoamer>();
+        if (roamer == null)
+        {
+            roamer = model.AddComponent<EnemyTerrainRoamer>();
+        }
+
+        roamer.SetActiveRoaming(true);
+    }
+
+    private static GameObject GetRoamerTarget(GameObject root)
+    {
+        if (root == null) return null;
+
+        var rootMover = root.GetComponent<CreatureMover>();
+        if (rootMover != null) return root;
+
+        var childMover = root.GetComponentInChildren<CreatureMover>(true);
+        return childMover != null ? childMover.gameObject : root;
     }
     private static void SetTagSafely(GameObject root, string tagName)
     {
@@ -469,6 +490,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 
