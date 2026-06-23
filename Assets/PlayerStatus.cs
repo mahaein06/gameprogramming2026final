@@ -132,12 +132,12 @@ public class PlayerStatus : MonoBehaviour
         if (hitObject == null || !hitObject.CompareTag(BulletTag)) return;
 
         EnemyBullet enemyBullet = hitObject.GetComponent<EnemyBullet>();
-        if (enemyBullet != null) return;
+        if (enemyBullet == null) return;
 
-        TakeDamage(BulletDamage);
-        Destroy(hitObject);
+        // EnemyBullet applies player damage itself. PlayerStatus only filters out player-fired bullets here.
     }
 }
+
 
 
 
