@@ -28,6 +28,7 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float muzzleOffset = 0.25f;
     [SerializeField] private GameObject bulletPrefab;
     [SerializeField] private Transform firePoint;
+    [SerializeField] private bool rotateWeaponToAim = true;
 
     [Header("Patrol")]
     [SerializeField] private Transform[] patrolPoints;
@@ -181,8 +182,10 @@ public class EnemyAI : MonoBehaviour
 
     private void AimWeaponAtPlayer()
     {
+        if (!rotateWeaponToAim) return;
+
         EnsureFirePoint();
-        if (firePoint == null || player == null) return;
+        if (firePoint == null || firePoint == transform || player == null) return;
 
         Vector3 fireDirection = GetFireDirection();
         if (fireDirection.sqrMagnitude < 0.0001f) return;
@@ -191,7 +194,6 @@ public class EnemyAI : MonoBehaviour
         Quaternion targetRotation = Quaternion.LookRotation(fireDirection, Vector3.up) * muzzleRotationOffset;
         firePoint.rotation = Quaternion.RotateTowards(firePoint.rotation, targetRotation, 720f * Time.deltaTime);
     }
-
     private void CacheMuzzleRotationOffset()
     {
         if (hasMuzzleRotationOffset || firePoint == null) return;
@@ -219,10 +221,11 @@ public class EnemyAI : MonoBehaviour
         EnsureBulletPrefab();
         EnsureFirePoint();
         AimWeaponAtPlayer();
-        if (bulletPrefab == null || firePoint == null) return;
+        if (bulletPrefab == null) return;
 
         Vector3 fireDirection = GetFireDirection();
-        Vector3 spawnPosition = firePoint.position + fireDirection * muzzleOffset;
+        Vector3 spawnOrigin = firePoint != null && firePoint != transform ? firePoint.position : transform.position + Vector3.up * 1.1f;
+        Vector3 spawnPosition = spawnOrigin + fireDirection * muzzleOffset;
         Quaternion spawnRotation = Quaternion.LookRotation(fireDirection, Vector3.up);
         GameObject bullet = Instantiate(bulletPrefab, spawnPosition, spawnRotation);
         SetTagSafely(bullet, BulletTag);
@@ -358,7 +361,7 @@ public class EnemyAI : MonoBehaviour
         firePoint = FindWeaponCandidate();
         if (firePoint == null)
         {
-            firePoint = transform;
+            rotateWeaponToAim = false;
         }
 
         hasMuzzleRotationOffset = false;
@@ -421,5 +424,7 @@ public class EnemyAI : MonoBehaviour
         }
     }
 }
+
+
 
 
