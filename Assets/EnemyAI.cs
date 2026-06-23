@@ -59,7 +59,8 @@ public class EnemyAI : MonoBehaviour
     private bool reloadScheduled;
     private Vector3 randomPatrolTarget;
     private bool hasRandomPatrolTarget;
-
+    private Quaternion muzzleRotationOffset = Quaternion.identity;
+    private bool hasMuzzleRotationOffset;
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -72,6 +73,7 @@ public class EnemyAI : MonoBehaviour
         currentAmmo = Mathf.Max(0, startAmmo);
         EnsureBulletPrefab();
         EnsureFirePoint();
+        CacheMuzzleRotationOffset();
     }
 
     private void OnEnable()
@@ -173,9 +175,37 @@ public class EnemyAI : MonoBehaviour
     {
         StopAgent();
         FacePlayer();
+        AimWeaponAtPlayer();
         TryFire();
     }
 
+    private void AimWeaponAtPlayer()
+    {
+        EnsureFirePoint();
+        if (firePoint == null || player == null) return;
+
+        Vector3 fireDirection = GetFireDirection();
+        if (fireDirection.sqrMagnitude < 0.0001f) return;
+
+        CacheMuzzleRotationOffset();
+        Quaternion targetRotation = Quaternion.LookRotation(fireDirection, Vector3.up) * muzzleRotationOffset;
+        firePoint.rotation = Quaternion.RotateTowards(firePoint.rotation, targetRotation, 720f * Time.deltaTime);
+    }
+
+    private void CacheMuzzleRotationOffset()
+    {
+        if (hasMuzzleRotationOffset || firePoint == null) return;
+
+        Vector3 referenceDirection = GetFireDirection();
+        if (referenceDirection.sqrMagnitude < 0.0001f)
+        {
+            referenceDirection = transform.forward;
+        }
+
+        Quaternion bulletRotation = Quaternion.LookRotation(referenceDirection.normalized, Vector3.up);
+        muzzleRotationOffset = Quaternion.Inverse(bulletRotation) * firePoint.rotation;
+        hasMuzzleRotationOffset = true;
+    }
     private void TryFire()
     {
         if (player == null || Time.time < nextFireTime) return;
@@ -188,6 +218,7 @@ public class EnemyAI : MonoBehaviour
 
         EnsureBulletPrefab();
         EnsureFirePoint();
+        AimWeaponAtPlayer();
         if (bulletPrefab == null || firePoint == null) return;
 
         Vector3 fireDirection = GetFireDirection();
@@ -329,6 +360,9 @@ public class EnemyAI : MonoBehaviour
         {
             firePoint = transform;
         }
+
+        hasMuzzleRotationOffset = false;
+        CacheMuzzleRotationOffset();
     }
 
     private Transform FindWeaponCandidate()
@@ -387,4 +421,5 @@ public class EnemyAI : MonoBehaviour
         }
     }
 }
+
 

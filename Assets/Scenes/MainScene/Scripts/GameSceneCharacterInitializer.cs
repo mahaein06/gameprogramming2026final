@@ -27,6 +27,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         if (scene.name != GameSceneName) return;
 
         GameSceneNavMeshBaker.EnsureInScene();
+        DisableDuplicateAnimalRoots();
 
         var selected = CharacterSelectionState.SelectedAnimal;
         var selectedRoot = FindAnimalRoot(selected);
@@ -61,6 +62,66 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 
+    private static void DisableDuplicateAnimalRoots()
+    {
+        foreach (SelectableAnimal animal in System.Enum.GetValues(typeof(SelectableAnimal)))
+        {
+            GameObject[] roots = FindAnimalRoots(animal);
+            if (roots.Length <= 1) continue;
+
+            GameObject keep = roots[0];
+            foreach (GameObject root in roots)
+            {
+                if (root.name == GetSceneObjectName(animal))
+                {
+                    keep = root;
+                    break;
+                }
+            }
+
+            foreach (GameObject root in roots)
+            {
+                if (root != null && root != keep)
+                {
+                    root.SetActive(false);
+                    Debug.LogWarning($"Disabled duplicate {animal} object: {root.name}", root);
+                }
+            }
+        }
+    }
+
+    private static GameObject[] FindAnimalRoots(SelectableAnimal animal)
+    {
+        string primaryName = GetSceneObjectName(animal);
+        System.Collections.Generic.List<GameObject> roots = new System.Collections.Generic.List<GameObject>();
+
+        foreach (var mover in FindObjectsByType<CreatureMover>(FindObjectsInactive.Include))
+        {
+            if (IsAnimalRootName(mover.name, primaryName) || (animal == SelectableAnimal.Penguin && IsAnimalRootName(mover.name, "Penguin")))
+            {
+                if (!roots.Contains(mover.gameObject))
+                {
+                    roots.Add(mover.gameObject);
+                }
+            }
+        }
+
+        GameObject exact = GameObject.Find(primaryName);
+        if (exact != null && exact.GetComponent<CreatureMover>() != null && !roots.Contains(exact))
+        {
+            roots.Insert(0, exact);
+        }
+
+        return roots.ToArray();
+    }
+
+    private static bool IsAnimalRootName(string objectName, string primaryName)
+    {
+        return objectName == primaryName
+            || objectName.StartsWith(primaryName + " ")
+            || objectName.StartsWith(primaryName + "_")
+            || objectName.StartsWith(primaryName + "(");
+    }
     private static ThirdPersonCamera ConfigureCameras(SelectableAnimal selected, GameObject selectedRoot)
     {
         var cameras = FindObjectsByType<ThirdPersonCamera>(FindObjectsInactive.Include);
@@ -340,6 +401,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 
