@@ -263,19 +263,31 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     }
     private static void ConfigureInput(GameObject root, ThirdPersonCamera camera, bool isPlayer)
     {
-        var input = root.GetComponent<MovePlayerInput>();
-        if (input == null && isPlayer)
+        var inputs = root.GetComponentsInChildren<MovePlayerInput>(true);
+        MovePlayerInput playerInput = null;
+
+        foreach (var input in inputs)
         {
-            input = root.AddComponent<MovePlayerInput>();
+            if (input == null) continue;
+
+            bool useThisInput = isPlayer && playerInput == null;
+            input.enabled = useThisInput;
+            if (useThisInput)
+            {
+                playerInput = input;
+            }
         }
 
-        if (input == null) return;
-
-        input.enabled = isPlayer;
-        if (isPlayer)
+        if (playerInput == null && isPlayer)
         {
-            input.BindMover(root.GetComponent<CreatureMover>());
-            input.BindCamera(camera);
+            playerInput = root.AddComponent<MovePlayerInput>();
+            playerInput.enabled = true;
+        }
+
+        if (playerInput != null && isPlayer)
+        {
+            playerInput.BindMover(root.GetComponent<CreatureMover>());
+            playerInput.BindCamera(camera);
         }
     }
 
@@ -403,6 +415,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 
