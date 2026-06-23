@@ -26,7 +26,6 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     {
         if (scene.name != GameSceneName) return;
 
-        GameSceneNavMeshBaker.EnsureRuntimeNavMesh();
 
         DisableDuplicateAnimalRoots();
 
@@ -258,6 +257,12 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     {
         if (root == null) return;
 
+        var agent = root.GetComponent<NavMeshAgent>();
+        if (agent != null)
+        {
+            agent.enabled = false;
+        }
+
         var controller = root.GetComponent<CharacterController>();
         if (controller != null)
         {
@@ -268,12 +273,6 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         if (mover != null)
         {
             mover.enabled = isPlayer;
-        }
-
-        var agent = root.GetComponent<NavMeshAgent>();
-        if (agent != null && isPlayer)
-        {
-            agent.enabled = false;
         }
     }
     private static void ConfigureHorseFrontLegStabilizer(GameObject root, SelectableAnimal animal)
@@ -387,78 +386,17 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     }
     private static void ConfigureEnemyAI(GameObject root, GameObject playerRoot, bool isPlayer)
     {
-        var ai = root.GetComponent<EnemyAI>();
-        var agent = root.GetComponent<NavMeshAgent>();
-
-        if (isPlayer)
+        var ai = root != null ? root.GetComponent<EnemyAI>() : null;
+        if (ai != null)
         {
-            if (ai != null)
-            {
-                ai.enabled = false;
-            }
-
-            if (agent != null)
-            {
-                agent.enabled = false;
-            }
-
-            return;
+            ai.enabled = false;
         }
 
-        if (agent == null)
-        {
-            agent = root.AddComponent<NavMeshAgent>();
-        }
-
-        agent.enabled = true;
-        agent.updatePosition = true;
-        agent.updateRotation = true;
-        agent.speed = Mathf.Max(agent.speed, 3.5f);
-        agent.angularSpeed = Mathf.Max(agent.angularSpeed, 360f);
-        agent.acceleration = Mathf.Max(agent.acceleration, 12f);
-        agent.stoppingDistance = Mathf.Max(agent.stoppingDistance, 2.5f);
-
-        if (!TryPlaceAgentOnNavMesh(root, agent, 8f, 0.75f))
+        var agent = root != null ? root.GetComponent<NavMeshAgent>() : null;
+        if (agent != null)
         {
             agent.enabled = false;
-            return;
         }
-
-        if (ai == null)
-        {
-            ai = root.AddComponent<EnemyAI>();
-        }
-
-        ai.enabled = true;
-        if (playerRoot != null)
-        {
-            ai.BindPlayer(playerRoot.transform);
-        }
-    }
-    private static bool TryPlaceAgentOnNavMesh(GameObject root, NavMeshAgent agent, float maxDistance, float maxHorizontalShift)
-    {
-        if (root == null || agent == null) return false;
-        if (agent.isOnNavMesh) return true;
-
-        Vector3 originalPosition = root.transform.position;
-        Quaternion originalRotation = root.transform.rotation;
-        if (!NavMesh.SamplePosition(originalPosition, out NavMeshHit hit, maxDistance, NavMesh.AllAreas))
-        {
-            Debug.LogWarning($"Enemy '{root.name}' is too far from the NavMesh. Move it onto baked terrain in the Scene view.", root);
-            return false;
-        }
-
-        Vector2 horizontalShift = new Vector2(hit.position.x - originalPosition.x, hit.position.z - originalPosition.z);
-        if (horizontalShift.magnitude > maxHorizontalShift)
-        {
-            Debug.LogWarning($"Enemy '{root.name}' is near a NavMesh, but the closest point is too far from its scene position. Move it closer to walkable terrain.", root);
-            return false;
-        }
-
-        agent.baseOffset = originalPosition.y - hit.position.y;
-        bool warped = agent.Warp(hit.position);
-        root.transform.rotation = originalRotation;
-        return warped && agent.isOnNavMesh;
     }
     private static void SetTagSafely(GameObject root, string tagName)
     {
@@ -472,6 +410,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
+
 
 
 
