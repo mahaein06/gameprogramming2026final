@@ -8,7 +8,9 @@ public class GameSceneNavMeshBaker : MonoBehaviour
     [Header("Surface")]
     [SerializeField] private NavMeshSurface surface;
     [SerializeField] private Vector3 bakeVolumeCenter = Vector3.zero;
-    [SerializeField] private Vector3 bakeVolumeSize = new Vector3(80f, 20f, 80f);
+    [SerializeField] private Vector3 bakeVolumeSize = new Vector3(200f, 40f, 260f);
+    [SerializeField] private bool autoFitBakeVolume = true;
+    [SerializeField] private float bakeVolumePadding = 20f;
     [SerializeField] private bool buildOnStart = true;
 
     [Header("House Exclusion")]
@@ -76,6 +78,8 @@ public class GameSceneNavMeshBaker : MonoBehaviour
             }
         }
 
+        UpdateBakeVolumeFromScene();
+
         surface.collectObjects = CollectObjects.Volume;
         surface.center = bakeVolumeCenter;
         surface.size = bakeVolumeSize;
@@ -95,6 +99,60 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         EnsureHouseBlocker();
     }
 
+    private void UpdateBakeVolumeFromScene()
+    {
+        if (!autoFitBakeVolume) return;
+
+        bool hasBounds = false;
+        Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+
+        foreach (TerrainCollider terrainCollider in FindObjectsByType<TerrainCollider>(FindObjectsInactive.Exclude))
+        {
+            EncapsulateBounds(ref bounds, ref hasBounds, terrainCollider.bounds);
+        }
+
+        string[] importantNames = { "Deer", "Horse", "Pinguin", "Penguin", "Dog", "Tiger", "House", "HouseFull" };
+        foreach (string objectName in importantNames)
+        {
+            GameObject target = GameObject.Find(objectName);
+            if (target == null) continue;
+
+            EncapsulatePoint(ref bounds, ref hasBounds, target.transform.position);
+        }
+
+        if (!hasBounds) return;
+
+        bounds.Expand(new Vector3(bakeVolumePadding, 0f, bakeVolumePadding));
+        bakeVolumeCenter = transform.InverseTransformPoint(bounds.center);
+        bakeVolumeSize = new Vector3(
+            Mathf.Max(bounds.size.x, 80f),
+            Mathf.Max(bounds.size.y + 20f, 40f),
+            Mathf.Max(bounds.size.z, 80f));
+    }
+
+    private static void EncapsulateBounds(ref Bounds bounds, ref bool hasBounds, Bounds value)
+    {
+        if (!hasBounds)
+        {
+            bounds = value;
+            hasBounds = true;
+            return;
+        }
+
+        bounds.Encapsulate(value);
+    }
+
+    private static void EncapsulatePoint(ref Bounds bounds, ref bool hasBounds, Vector3 point)
+    {
+        if (!hasBounds)
+        {
+            bounds = new Bounds(point, Vector3.one);
+            hasBounds = true;
+            return;
+        }
+
+        bounds.Encapsulate(point);
+    }
     private void EnsureHouseBlocker()
     {
         if (house == null) return;
@@ -122,3 +180,5 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         houseBlocker.size = houseExclusionSize;
     }
 }
+
+

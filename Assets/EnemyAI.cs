@@ -76,11 +76,6 @@ public class EnemyAI : MonoBehaviour
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
-        if (agent == null)
-        {
-            agent = gameObject.AddComponent<NavMeshAgent>();
-        }
-
         ownerColliders = GetComponentsInChildren<Collider>(true);
         currentAmmo = Mathf.Max(0, startAmmo);
         EnsureBulletPrefab();
@@ -478,6 +473,8 @@ public class EnemyAI : MonoBehaviour
         }
     }
 }
+
+
 
 
 
