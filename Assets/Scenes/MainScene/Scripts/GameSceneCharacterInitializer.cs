@@ -1,4 +1,4 @@
-﻿using ithappy.Animals_FREE;
+using ithappy.Animals_FREE;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
@@ -46,6 +46,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
             ConfigureMovementComponents(root, isPlayer);
             ConfigureHorseFrontLegStabilizer(root, animal);
+            ConfigureKittyLegStabilizer(root, animal);
             ConfigureInput(root, selectedCamera, isPlayer);
             PlayerStatus status = ConfigurePlayerStatus(root, isPlayer);
             ConfigureShooter(root, status, selectedCamera, isPlayer);
@@ -326,6 +327,33 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         {
             root.AddComponent<HorseFrontLegStabilizer>();
         }
+    }
+    private static void ConfigureKittyLegStabilizer(GameObject root, SelectableAnimal animal)
+    {
+        if (animal != SelectableAnimal.Horse || root == null) return;
+
+        var kittyRoot = FindChildByName(root.transform, "Kitty_001") ?? FindChildByName(root.transform, "Kitty");
+        GameObject target = kittyRoot != null ? kittyRoot.gameObject : root;
+
+        if (target.GetComponent<KittyLegStabilizer>() == null)
+        {
+            target.AddComponent<KittyLegStabilizer>();
+        }
+    }
+
+    private static Transform FindChildByName(Transform root, string childName)
+    {
+        if (root == null) return null;
+
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name == childName)
+            {
+                return child;
+            }
+        }
+
+        return null;
     }
     private static void ConfigureInput(GameObject root, ThirdPersonCamera camera, bool isPlayer)
     {
