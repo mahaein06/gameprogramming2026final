@@ -22,6 +22,7 @@ public class EnemyStatus : MonoBehaviour
     [SerializeField] private GameObject hpBarRoot;
     private Renderer[] renderers;
     private bool isDead;
+    private bool warnedMissingHPBar;
 
     public bool IsDead => isDead;
 
@@ -212,46 +213,34 @@ public class EnemyStatus : MonoBehaviour
             hpBarRoot = hpSlider.gameObject;
         }
 
-        bool createdHPBar = false;
-
-        if (hpSlider == null || hpBarRoot == null)
+        if (hpBarRoot != null && hpSlider == null)
         {
-            GameObject source = GameObject.Find("HPBar");
-            if (source != null)
-            {
-                hpBarRoot = Instantiate(source);
-                hpBarRoot.name = $"{name}_EnemyHPBar";
-                hpBarRoot.transform.SetParent(transform, false);
-                hpBarRoot.transform.localPosition = hpBarOffset;
-                hpSlider = hpBarRoot.GetComponent<Slider>();
-                createdHPBar = true;
-            }
+            hpSlider = hpBarRoot.GetComponent<Slider>();
         }
 
         if (hpSlider == null || hpBarRoot == null)
         {
-            hpBarRoot = new GameObject($"{name}_EnemyHPBar", typeof(RectTransform), typeof(Canvas), typeof(Slider));
-            hpBarRoot.transform.SetParent(transform, false);
-            hpBarRoot.transform.localPosition = hpBarOffset;
-            hpSlider = hpBarRoot.GetComponent<Slider>();
-            CreateSliderVisuals(hpBarRoot.transform, hpSlider);
-            createdHPBar = true;
+            TryBindExistingHPBar();
+        }
+
+        if (hpSlider == null || hpBarRoot == null)
+        {
+            WarnMissingHPBarOnce();
+            return;
         }
 
         Canvas canvas = hpBarRoot.GetComponent<Canvas>();
-        if (canvas == null) canvas = hpBarRoot.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-        canvas.overrideSorting = true;
-        canvas.sortingOrder = 100;
+        if (canvas != null)
+        {
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 100;
+        }
 
         RectTransform rect = hpBarRoot.GetComponent<RectTransform>();
         if (rect != null)
         {
             rect.sizeDelta = hpBarSize;
-            if (createdHPBar)
-            {
-                rect.localScale = Vector3.one;
-            }
         }
 
         RepairSliderVisuals();
@@ -262,43 +251,52 @@ public class EnemyStatus : MonoBehaviour
         SetFillColor(Color.red);
         UpdateHPBarPose();
     }
-    private void CreateSliderVisuals(Transform root, Slider slider)
+
+    private void TryBindExistingHPBar()
     {
-        RectTransform rootRect = root.GetComponent<RectTransform>();
-        if (rootRect != null)
+        Slider slider = FindExistingHPBarSlider();
+        if (slider == null) return;
+
+        hpSlider = slider;
+        hpBarRoot = slider.gameObject;
+    }
+
+    private Slider FindExistingHPBarSlider()
+    {
+        string normalizedAnimalName = NormalizeName(name);
+        Slider best = null;
+
+        foreach (Slider slider in FindObjectsByType<Slider>(FindObjectsInactive.Include))
         {
-            rootRect.sizeDelta = hpBarSize;
+            if (slider == null) continue;
+            string normalizedSliderName = NormalizeName(slider.name);
+            if (!normalizedSliderName.Contains("enemyhpbar")) continue;
+
+            if (normalizedSliderName.Contains(normalizedAnimalName))
+            {
+                return slider;
+            }
+
+            if (best == null && slider.transform.IsChildOf(transform))
+            {
+                best = slider;
+            }
         }
 
-        GameObject backgroundObject = new GameObject("Background", typeof(RectTransform), typeof(Image));
-        backgroundObject.transform.SetParent(root, false);
-        RectTransform backgroundRect = backgroundObject.GetComponent<RectTransform>();
-        backgroundRect.anchorMin = Vector2.zero;
-        backgroundRect.anchorMax = Vector2.one;
-        backgroundRect.offsetMin = Vector2.zero;
-        backgroundRect.offsetMax = Vector2.zero;
-        Image backgroundImage = backgroundObject.GetComponent<Image>();
-        backgroundImage.color = Color.black;
-        backgroundImage.raycastTarget = false;
+        return best;
+    }
 
-        GameObject fillAreaObject = new GameObject("Fill Area", typeof(RectTransform));
-        fillAreaObject.transform.SetParent(root, false);
-        RectTransform fillAreaRect = fillAreaObject.GetComponent<RectTransform>();
-        fillAreaRect.anchorMin = Vector2.zero;
-        fillAreaRect.anchorMax = Vector2.one;
-        ApplyFillAreaBorder(fillAreaRect);
+    private static string NormalizeName(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+        return value.Replace(" ", string.Empty).Replace("_", string.Empty).Replace("(", string.Empty).Replace(")", string.Empty).ToLowerInvariant();
+    }
 
-        GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
-        fillObject.transform.SetParent(fillAreaObject.transform, false);
-        RectTransform fillRect = fillObject.GetComponent<RectTransform>();
-        fillRect.anchorMin = Vector2.zero;
-        fillRect.anchorMax = Vector2.one;
-        fillRect.offsetMin = Vector2.zero;
-        fillRect.offsetMax = Vector2.zero;
-        fillObject.GetComponent<Image>().color = Color.red;
-
-        slider.targetGraphic = fillObject.GetComponent<Image>();
-        slider.fillRect = fillRect;
+    private void WarnMissingHPBarOnce()
+    {
+        if (warnedMissingHPBar) return;
+        warnedMissingHPBar = true;
+        Debug.LogWarning($"EnemyStatus on '{name}' could not find an existing enemy HP bar. Assign Hp Slider and Hp Bar Root in the Inspector.", this);
     }
     private void ApplyFillAreaBorder(RectTransform fillAreaRect)
     {
@@ -471,6 +469,9 @@ public class EnemyStatus : MonoBehaviour
         }
     }
 }
+
+
+
 
 
 
