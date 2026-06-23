@@ -3,23 +3,44 @@
 public class EnemyTerrainRoamer : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 1.4f;
+    [SerializeField] private float rotateSpeed = 180f;
     [SerializeField] private float roamRadius = 10f;
     [SerializeField] private float pointTolerance = 0.35f;
+    [SerializeField] private float moveAngleThreshold = 20f;
     [SerializeField] private Vector2 waitTimeRange = new Vector2(0.8f, 2.2f);
     [SerializeField] private bool lockYPosition = true;
-    [SerializeField] private bool lockYRotation = true;
+    [SerializeField] private bool lockXRotation = true;
+    [SerializeField] private bool lockZRotation = true;
+    [SerializeField] private string verticalParameter = "Vert";
+    [SerializeField] private string stateParameter = "State";
+    [SerializeField] private float animationDampTime = 0.12f;
 
     private Vector3 origin;
     private Vector3 target;
     private float fixedY;
-    private float fixedYRotation;
+    private float fixedXRotation;
+    private float fixedZRotation;
     private float waitUntil;
     private bool initialized;
+    private bool isRoaming;
+    private Animator animator;
+
+    public bool IsRoaming => enabled && isRoaming;
+
+    private void Awake()
+    {
+        animator = GetComponentInChildren<Animator>(true);
+    }
 
     private void OnEnable()
     {
         CaptureStartPose();
         PickNewTarget();
+    }
+
+    private void OnDisable()
+    {
+        SetWalkAnimation(false);
     }
 
     private void Update()
@@ -31,6 +52,8 @@ public class EnemyTerrainRoamer : MonoBehaviour
 
         if (Time.time < waitUntil)
         {
+            isRoaming = false;
+            SetWalkAnimation(false);
             ApplyLocks();
             return;
         }
@@ -38,21 +61,42 @@ public class EnemyTerrainRoamer : MonoBehaviour
         Vector3 current = transform.position;
         Vector3 flatCurrent = new Vector3(current.x, fixedY, current.z);
         Vector3 flatTarget = new Vector3(target.x, fixedY, target.z);
+        Vector3 toTarget = flatTarget - flatCurrent;
 
-        if ((flatTarget - flatCurrent).sqrMagnitude <= pointTolerance * pointTolerance)
+        if (toTarget.sqrMagnitude <= pointTolerance * pointTolerance)
         {
+            isRoaming = false;
+            SetWalkAnimation(false);
             PickNewTarget();
             ApplyLocks();
             return;
         }
 
-        Vector3 next = Vector3.MoveTowards(flatCurrent, flatTarget, moveSpeed * Time.deltaTime);
-        if (lockYPosition)
+        RotateToward(toTarget);
+
+        Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+        float angleToTarget = Vector3.Angle(flatForward, toTarget.normalized);
+        bool canMoveForward = angleToTarget <= moveAngleThreshold;
+
+        if (canMoveForward)
         {
-            next.y = fixedY;
+            Vector3 step = flatForward * moveSpeed * Time.deltaTime;
+            if (step.sqrMagnitude > toTarget.sqrMagnitude)
+            {
+                step = toTarget;
+            }
+
+            Vector3 next = flatCurrent + step;
+            if (lockYPosition)
+            {
+                next.y = fixedY;
+            }
+
+            transform.position = next;
         }
 
-        transform.position = next;
+        isRoaming = true;
+        SetWalkAnimation(true);
         ApplyLocks();
     }
 
@@ -60,7 +104,8 @@ public class EnemyTerrainRoamer : MonoBehaviour
     {
         origin = transform.position;
         fixedY = transform.position.y;
-        fixedYRotation = transform.eulerAngles.y;
+        fixedXRotation = transform.eulerAngles.x;
+        fixedZRotation = transform.eulerAngles.z;
         initialized = true;
     }
 
@@ -72,6 +117,25 @@ public class EnemyTerrainRoamer : MonoBehaviour
             CaptureStartPose();
             PickNewTarget();
         }
+        else
+        {
+            isRoaming = false;
+            SetWalkAnimation(false);
+        }
+    }
+
+    private void RotateToward(Vector3 direction)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        Vector3 currentEuler = transform.eulerAngles;
+        Vector3 targetEuler = targetRotation.eulerAngles;
+        targetEuler.x = lockXRotation ? fixedXRotation : currentEuler.x;
+        targetEuler.z = lockZRotation ? fixedZRotation : currentEuler.z;
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(targetEuler), rotateSpeed * Time.deltaTime);
     }
 
     private void PickNewTarget()
@@ -106,14 +170,33 @@ public class EnemyTerrainRoamer : MonoBehaviour
             }
         }
 
-        if (lockYRotation)
+        Vector3 euler = transform.eulerAngles;
+        bool changed = false;
+
+        if (lockXRotation && Mathf.Abs(Mathf.DeltaAngle(euler.x, fixedXRotation)) > 0.001f)
         {
-            Vector3 euler = transform.eulerAngles;
-            if (Mathf.Abs(Mathf.DeltaAngle(euler.y, fixedYRotation)) > 0.001f)
-            {
-                euler.y = fixedYRotation;
-                transform.eulerAngles = euler;
-            }
+            euler.x = fixedXRotation;
+            changed = true;
         }
+
+        if (lockZRotation && Mathf.Abs(Mathf.DeltaAngle(euler.z, fixedZRotation)) > 0.001f)
+        {
+            euler.z = fixedZRotation;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            transform.eulerAngles = euler;
+        }
+    }
+
+    private void SetWalkAnimation(bool moving)
+    {
+        if (animator == null || !animator.enabled || !animator.gameObject.activeInHierarchy) return;
+
+        float vertical = moving ? 1f : 0f;
+        animator.SetFloat(verticalParameter, vertical, animationDampTime, Time.deltaTime);
+        animator.SetFloat(stateParameter, 0f, animationDampTime, Time.deltaTime);
     }
 }

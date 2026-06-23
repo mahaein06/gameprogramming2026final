@@ -23,6 +23,7 @@ namespace ithappy.Animals_FREE
 
         private CreatureMover m_Mover;
         private CharacterController m_Controller;
+        private EnemyTerrainRoamer m_Roamer;
         private float m_Time;
         private float m_Weight;
         private bool m_Initialized;
@@ -54,6 +55,7 @@ namespace ithappy.Animals_FREE
         {
             m_Mover = GetComponent<CreatureMover>();
             m_Controller = GetComponent<CharacterController>();
+            m_Roamer = GetComponent<EnemyTerrainRoamer>();
             ScheduleNextLookAround(1.5f);
         }
 
@@ -86,6 +88,7 @@ namespace ithappy.Animals_FREE
         private bool IsMoving()
         {
             if (m_Mover != null && m_Mover.Axis.sqrMagnitude > 0.001f) return true;
+            if (m_Roamer != null && m_Roamer.IsRoaming) return true;
             return m_Controller != null && new Vector3(m_Controller.velocity.x, 0f, m_Controller.velocity.z).sqrMagnitude > 0.001f;
         }
 
@@ -218,6 +221,7 @@ namespace ithappy.Animals_FREE
         }
     }
 }
+
 
 
 
