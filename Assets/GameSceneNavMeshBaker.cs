@@ -11,7 +11,7 @@ public class GameSceneNavMeshBaker : MonoBehaviour
     [SerializeField] private Vector3 bakeVolumeSize = new Vector3(200f, 40f, 260f);
     [SerializeField] private bool autoFitBakeVolume = true;
     [SerializeField] private float bakeVolumePadding = 20f;
-    [SerializeField] private bool buildOnStart = true;
+    [SerializeField] private bool buildOnStart = false;
 
     [Header("House Exclusion")]
     [SerializeField] private Transform house;
@@ -23,10 +23,6 @@ public class GameSceneNavMeshBaker : MonoBehaviour
     private void Awake()
     {
         EnsureSetup();
-        if (Application.isPlaying && buildOnStart)
-        {
-            BuildNavMesh();
-        }
     }
 
     private void OnEnable()
@@ -52,6 +48,11 @@ public class GameSceneNavMeshBaker : MonoBehaviour
     public static GameSceneNavMeshBaker EnsureInScene()
     {
         GameSceneNavMeshBaker baker = FindAnyObjectByType<GameSceneNavMeshBaker>(FindObjectsInactive.Include);
+        if (Application.isPlaying)
+        {
+            return baker;
+        }
+
         if (baker == null)
         {
             GameObject bakerObject = new GameObject("GameSceneNavMeshBaker");
@@ -59,7 +60,7 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         }
 
         baker.EnsureSetup();
-        if (Application.isPlaying && baker.buildOnStart)
+        if (baker.buildOnStart)
         {
             baker.BuildNavMesh();
         }
@@ -180,5 +181,6 @@ public class GameSceneNavMeshBaker : MonoBehaviour
         houseBlocker.size = houseExclusionSize;
     }
 }
+
 
 
