@@ -27,6 +27,11 @@ namespace ithappy.Animals_FREE
 
         private static readonly string[] WeaponNameHints =
         {
+            "deergun",
+            "horsegun",
+            "penguingun",
+            "tigergun",
+            "doggun",
             "RPGDONE",
             "SSG_Guns",
             "Gun",
@@ -407,4 +412,5 @@ namespace ithappy.Animals_FREE
         }
     }
 }
+
 

@@ -43,6 +43,11 @@ public class EnemyAI : MonoBehaviour
 
     private static readonly string[] WeaponNameHints =
     {
+        "deergun",
+        "horsegun",
+        "penguingun",
+        "tigergun",
+        "doggun",
         "RPGDONE",
         "SSG_Guns",
         "Gun",
@@ -424,6 +429,7 @@ public class EnemyAI : MonoBehaviour
         }
     }
 }
+
 
 
 
