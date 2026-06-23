@@ -40,7 +40,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             if (root == null) continue;
 
             bool isPlayer = animal == selected;
-            LockCurrentY(root);
+            LockCurrentY(root, animal);
             ConfigureVisualGrounding(root, animal);
             ConfigureTigerAnimator(root, animal);
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
@@ -256,40 +256,37 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     }
 
 
-    private static void LockCurrentY(GameObject root)
+    private static void LockCurrentY(GameObject root, SelectableAnimal animal)
     {
         if (root == null) return;
 
-        var yLock = root.GetComponent<FixedYPosition>();
+        GameObject lockTarget = GetYLockTarget(root, animal);
+        var yLock = lockTarget.GetComponent<FixedYPosition>();
         if (yLock == null)
         {
-            yLock = root.AddComponent<FixedYPosition>();
+            yLock = lockTarget.AddComponent<FixedYPosition>();
         }
 
         yLock.CaptureCurrentY();
+    }
+
+    private static GameObject GetYLockTarget(GameObject root, SelectableAnimal animal)
+    {
+        if (root == null) return null;
+        if (animal != SelectableAnimal.Tiger) return root;
+
+        var tigerModel = root.GetComponentInChildren<CreatureMover>(true);
+        return tigerModel != null ? tigerModel.gameObject : root;
     }
     private static void ConfigureVisualGrounding(GameObject root, SelectableAnimal animal)
     {
         if (root == null) return;
 
         var snapper = root.GetComponent<VisualGroundSnapper>();
-        if (animal != SelectableAnimal.Tiger)
+        if (snapper != null)
         {
-            if (snapper != null)
-            {
-                snapper.enabled = false;
-            }
-
-            return;
+            snapper.enabled = false;
         }
-
-        if (snapper == null)
-        {
-            snapper = root.AddComponent<VisualGroundSnapper>();
-        }
-
-        snapper.enabled = true;
-        snapper.Configure(null, 0.02f);
     }
     private static void ConfigureTigerAnimator(GameObject root, SelectableAnimal animal)
     {
@@ -457,6 +454,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
+
 
 
 
