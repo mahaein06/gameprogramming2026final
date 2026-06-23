@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace ithappy.Animals_FREE
 {
@@ -11,16 +11,16 @@ namespace ithappy.Animals_FREE
 
         private readonly string[] m_FrontLegPaths =
         {
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.R",
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.R/front_thigh.R",
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.R/front_thigh.R/front_shin.R",
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.R/front_thigh.R/front_shin.R/front_foot.R",
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.R/front_thigh.R/front_shin.R/front_foot.R/front_toe.R",
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.L",
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.L/front_thigh.L",
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.L/front_thigh.L/front_shin.L",
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.L/front_thigh.L/front_shin.L/front_foot.L",
-            "Horse_001_rig/Root/spine.005/spine.006/spine.007/front_shoulder.L/front_thigh.L/front_shin.L/front_foot.L/front_toe.L"
+            "Horse_001_rig/Root/spine.005/shoulder.R",
+            "Horse_001_rig/Root/spine.005/shoulder.R/thigh.R",
+            "Horse_001_rig/Root/spine.005/shoulder.R/thigh.R/shin.R",
+            "Horse_001_rig/Root/spine.005/shoulder.R/thigh.R/shin.R/foot.R",
+            "Horse_001_rig/Root/spine.005/shoulder.R/thigh.R/shin.R/foot.R/toe.R",
+            "Horse_001_rig/Root/spine.005/shoulder.L",
+            "Horse_001_rig/Root/spine.005/shoulder.L/thigh.L",
+            "Horse_001_rig/Root/spine.005/shoulder.L/thigh.L/shin.L",
+            "Horse_001_rig/Root/spine.005/shoulder.L/thigh.L/shin.L/foot.L",
+            "Horse_001_rig/Root/spine.005/shoulder.L/thigh.L/shin.L/foot.L/toe.L"
         };
 
         private BonePose[] m_Bones;

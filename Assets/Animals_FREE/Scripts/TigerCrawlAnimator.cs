@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace ithappy.Animals_FREE
 {
@@ -88,6 +88,12 @@ namespace ithappy.Animals_FREE
         private bool IsMoving()
         {
             if (m_Mover != null && m_Mover.Axis.sqrMagnitude > 0.001f) return true;
+
+            if (m_Roamer == null)
+            {
+                m_Roamer = GetComponent<EnemyTerrainRoamer>();
+            }
+
             if (m_Roamer != null && m_Roamer.IsRoaming) return true;
             return m_Controller != null && new Vector3(m_Controller.velocity.x, 0f, m_Controller.velocity.z).sqrMagnitude > 0.001f;
         }
