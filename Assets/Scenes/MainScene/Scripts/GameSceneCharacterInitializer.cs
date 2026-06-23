@@ -308,14 +308,12 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             agent.enabled = false;
         }
 
-        var controller = root.GetComponent<CharacterController>();
-        if (controller != null)
+        foreach (var controller in root.GetComponentsInChildren<CharacterController>(true))
         {
             controller.enabled = isPlayer;
         }
 
-        var mover = root.GetComponent<CreatureMover>();
-        if (mover != null)
+        foreach (var mover in root.GetComponentsInChildren<CreatureMover>(true))
         {
             mover.enabled = isPlayer;
         }
@@ -354,7 +352,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
 
         if (playerInput != null && isPlayer)
         {
-            playerInput.BindMover(root.GetComponent<CreatureMover>());
+            playerInput.BindMover(GetRoamerTarget(root).GetComponent<CreatureMover>());
             playerInput.BindCamera(camera);
         }
     }
@@ -490,6 +488,8 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
+
 
 
 

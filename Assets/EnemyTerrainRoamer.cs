@@ -13,7 +13,6 @@ public class EnemyTerrainRoamer : MonoBehaviour
     [SerializeField] private bool lockZRotation = true;
     [SerializeField] private string verticalParameter = "Vert";
     [SerializeField] private string stateParameter = "State";
-    [SerializeField] private float animationDampTime = 0.12f;
 
     private Vector3 origin;
     private Vector3 target;
@@ -23,13 +22,13 @@ public class EnemyTerrainRoamer : MonoBehaviour
     private float waitUntil;
     private bool initialized;
     private bool isRoaming;
-    private Animator animator;
+    private Animator[] animators;
 
     public bool IsRoaming => enabled && isRoaming;
 
     private void Awake()
     {
-        animator = GetComponentInChildren<Animator>(true);
+        animators = GetComponentsInChildren<Animator>(true);
     }
 
     private void OnEnable()
@@ -193,10 +192,25 @@ public class EnemyTerrainRoamer : MonoBehaviour
 
     private void SetWalkAnimation(bool moving)
     {
-        if (animator == null || !animator.enabled || !animator.gameObject.activeInHierarchy) return;
+        if (animators == null || animators.Length == 0)
+        {
+            animators = GetComponentsInChildren<Animator>(true);
+        }
 
         float vertical = moving ? 1f : 0f;
-        animator.SetFloat(verticalParameter, vertical, animationDampTime, Time.deltaTime);
-        animator.SetFloat(stateParameter, 0f, animationDampTime, Time.deltaTime);
+        foreach (Animator animator in animators)
+        {
+            if (animator == null || !animator.enabled || !animator.gameObject.activeInHierarchy) continue;
+
+            for (int i = 0; i < animator.layerCount; i++)
+            {
+                animator.SetLayerWeight(i, 1f);
+            }
+
+            animator.SetFloat(verticalParameter, vertical);
+            animator.SetFloat(stateParameter, 0f);
+        }
     }
 }
+
+
