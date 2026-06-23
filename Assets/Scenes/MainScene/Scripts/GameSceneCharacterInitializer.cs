@@ -55,6 +55,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
                 enemyCount++;
             }
             ConfigureEnemyAI(root, selectedRoot, isPlayer);
+            ConfigureEnemyTerrainRoamer(root, isPlayer);
         }
 
         EnemyKillTracker.InitializeForScene(enemyCount);
@@ -442,6 +443,20 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             agent.enabled = false;
         }
     }
+    private static void ConfigureEnemyTerrainRoamer(GameObject root, bool isPlayer)
+    {
+        if (root == null) return;
+
+        var roamer = root.GetComponent<EnemyTerrainRoamer>();
+        if (roamer == null && !isPlayer)
+        {
+            roamer = root.AddComponent<EnemyTerrainRoamer>();
+        }
+
+        if (roamer == null) return;
+
+        roamer.SetActiveRoaming(!isPlayer);
+    }
     private static void SetTagSafely(GameObject root, string tagName)
     {
         try
@@ -454,6 +469,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
 
 
 
