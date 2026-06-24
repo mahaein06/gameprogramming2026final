@@ -24,6 +24,7 @@ public static class GameSceneEnemySetupEditor
 
         Scene scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || scene.name != "GameScene") return;
+        if (Object.FindAnyObjectByType<MinimulAnimalControl>(FindObjectsInactive.Include) != null) return;
 
         bool changed = false;
         foreach (string animalName in AnimalNames)

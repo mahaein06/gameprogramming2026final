@@ -47,7 +47,7 @@ namespace ithappy.Animals_FREE
 
                 if (!dog.TryGetComponent<DogBipedProceduralAnimator>(out _))
                 {
-                    dog.AddComponent<DogBipedProceduralAnimator>();
+                    //dog.AddComponent<DogBipedProceduralAnimator>();
                 }
             }
         }

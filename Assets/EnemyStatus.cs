@@ -27,6 +27,21 @@ public class EnemyStatus : MonoBehaviour
 
     public bool IsDead => isDead;
 
+    public void BindHPBar(Slider slider, GameObject root)
+    {
+        if (slider != null)
+        {
+            hpSlider = slider;
+        }
+
+        if (root != null)
+        {
+            hpBarRoot = root;
+        }
+
+        EnsureEditableHPBar();
+    }
+
     public void EnsureEditableHPBar()
     {
         renderers = GetComponentsInChildren<Renderer>(true);
@@ -147,6 +162,31 @@ public class EnemyStatus : MonoBehaviour
         if (agent != null)
         {
             agent.enabled = false;
+        }
+
+        foreach (MinimulNavMeshAnimalAI minimulAi in GetComponentsInChildren<MinimulNavMeshAnimalAI>(true))
+        {
+            minimulAi.enabled = false;
+        }
+
+        foreach (NavMeshAgent minimulAgent in GetComponentsInChildren<NavMeshAgent>(true))
+        {
+            minimulAgent.enabled = false;
+        }
+
+        foreach (ithappy.Animals_FREE.CreatureMover mover in GetComponentsInChildren<ithappy.Animals_FREE.CreatureMover>(true))
+        {
+            mover.enabled = false;
+        }
+
+        foreach (CameraArmAim armAim in GetComponentsInChildren<CameraArmAim>(true))
+        {
+            armAim.enabled = false;
+        }
+
+        foreach (MinimulMuzzleShooter shooter in GetComponentsInChildren<MinimulMuzzleShooter>(true))
+        {
+            shooter.enabled = false;
         }
     }
     private Vector3 CalculateFootPivot()

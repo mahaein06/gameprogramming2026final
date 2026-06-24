@@ -26,6 +26,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     {
         if (scene.name != GameSceneName) return;
 
+        if (FindAnyObjectByType<MinimulAnimalControl>(FindObjectsInactive.Include) != null) return;
 
         DisableDuplicateAnimalRoots();
 

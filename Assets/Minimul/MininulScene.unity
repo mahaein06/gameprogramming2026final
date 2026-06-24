@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 362045390}
   - component: {fileID: 362045389}
+  - component: {fileID: 362045391}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -216,6 +217,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!114 &362045391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 362045388}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &470932548
 GameObject:
   m_ObjectHideFlags: 0
@@ -279,8 +309,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MinimulAnimalControl
   playerCamera: {fileID: 1746082038}
+  playerHpSlider: {fileID: 0}
+  playerAmmoText: {fileID: 0}
   useCharacterSelectionState: 0
-  selectedAnimal: 0
+  selectedAnimal: 3
   animals:
   - animal: 0
     root: {fileID: 7402009758021423039}
@@ -290,6 +322,10 @@ MonoBehaviour:
     shooter: {fileID: 7402009758021423041}
     ai: {fileID: 7402009758021423051}
     navMeshAgent: {fileID: 7402009758021423052}
+    playerStatus: {fileID: 0}
+    enemyStatus: {fileID: 0}
+    enemyHpSlider: {fileID: 0}
+    enemyHpBarRoot: {fileID: 0}
     cameraYawOffset: -90
   - animal: 1
     root: {fileID: 3851015955526458060}
@@ -299,6 +335,10 @@ MonoBehaviour:
     shooter: {fileID: 3851015955526458064}
     ai: {fileID: 3851015955526458071}
     navMeshAgent: {fileID: 3851015955526458072}
+    playerStatus: {fileID: 0}
+    enemyStatus: {fileID: 0}
+    enemyHpSlider: {fileID: 0}
+    enemyHpBarRoot: {fileID: 0}
     cameraYawOffset: 60
   - animal: 2
     root: {fileID: 1527881005366115178}
@@ -308,6 +348,10 @@ MonoBehaviour:
     shooter: {fileID: 1527881005366115180}
     ai: {fileID: 1527881005366115191}
     navMeshAgent: {fileID: 1527881005366115192}
+    playerStatus: {fileID: 0}
+    enemyStatus: {fileID: 0}
+    enemyHpSlider: {fileID: 0}
+    enemyHpBarRoot: {fileID: 0}
     cameraYawOffset: 0
   - animal: 3
     root: {fileID: 2629182451214370055}
@@ -317,6 +361,10 @@ MonoBehaviour:
     shooter: {fileID: 2629182451214370057}
     ai: {fileID: 2629182451214370061}
     navMeshAgent: {fileID: 2629182451214370062}
+    playerStatus: {fileID: 0}
+    enemyStatus: {fileID: 0}
+    enemyHpSlider: {fileID: 0}
+    enemyHpBarRoot: {fileID: 0}
     cameraYawOffset: 180
   - animal: 4
     root: {fileID: 5883155896893736359}
@@ -326,6 +374,10 @@ MonoBehaviour:
     shooter: {fileID: 5883155896893736361}
     ai: {fileID: 5883155896893736371}
     navMeshAgent: {fileID: 5883155896893736372}
+    playerStatus: {fileID: 0}
+    enemyStatus: {fileID: 0}
+    enemyHpSlider: {fileID: 0}
+    enemyHpBarRoot: {fileID: 0}
     cameraYawOffset: 90
 --- !u!4 &1055031026
 Transform:

@@ -35,6 +35,22 @@ public class PlayerStatus : MonoBehaviour
         UpdateAmmoUI();
     }
 
+    public void BindUI(Slider hp, TMP_Text ammo)
+    {
+        if (hp != null)
+        {
+            hpSlider = hp;
+        }
+
+        if (ammo != null)
+        {
+            ammoText = ammo;
+        }
+
+        UpdateHPUI();
+        UpdateAmmoUI();
+    }
+
     private void AutoBindUI()
     {
         if (hpSlider == null)

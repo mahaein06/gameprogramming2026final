@@ -1,11 +1,15 @@
 using System;
 using ithappy.Animals_FREE;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.UI;
 
 public class MinimulAnimalControl : MonoBehaviour
 {
     [SerializeField] private ThirdPersonCamera playerCamera;
+    [SerializeField] private Slider playerHpSlider;
+    [SerializeField] private TMP_Text playerAmmoText;
     [SerializeField] private bool useCharacterSelectionState = true;
     [SerializeField] private SelectableAnimal selectedAnimal = SelectableAnimal.Dog;
     [SerializeField] private AnimalSlot[] animals = Array.Empty<AnimalSlot>();
@@ -35,13 +39,19 @@ public class MinimulAnimalControl : MonoBehaviour
             selectedPlayerCamera.SetYawOffset(playerSlot?.CameraYawOffset ?? 0f);
         }
 
+        int enemyCount = 0;
         foreach (AnimalSlot slot in animals)
         {
             if (slot == null) continue;
 
             bool isPlayer = slot.IsAnimal(animal);
-            slot.Apply(isPlayer, playerRoot, selectedPlayerCamera, selectedAimCamera);
+            if (slot.Apply(isPlayer, playerRoot, selectedPlayerCamera, selectedAimCamera, playerHpSlider, playerAmmoText))
+            {
+                enemyCount++;
+            }
         }
+
+        EnemyKillTracker.InitializeForScene(enemyCount);
     }
 
     private SelectableAnimal GetSelectedAnimal()
@@ -99,6 +109,10 @@ public class MinimulAnimalControl : MonoBehaviour
         [SerializeField] private MinimulMuzzleShooter shooter;
         [SerializeField] private MinimulNavMeshAnimalAI ai;
         [SerializeField] private NavMeshAgent navMeshAgent;
+        [SerializeField] private PlayerStatus playerStatus;
+        [SerializeField] private EnemyStatus enemyStatus;
+        [SerializeField] private Slider enemyHpSlider;
+        [SerializeField] private GameObject enemyHpBarRoot;
         [SerializeField, Range(-180f, 180f)] private float cameraYawOffset;
 
         public Transform Root => root != null ? root.transform : null;
@@ -114,8 +128,24 @@ public class MinimulAnimalControl : MonoBehaviour
             return root != null ? root.GetComponentInChildren<ThirdPersonCamera>(true) : null;
         }
 
-        public void Apply(bool isPlayer, Transform playerRoot, ThirdPersonCamera playerCamera, Camera aimCamera)
+        public bool Apply(
+            bool isPlayer,
+            Transform playerRoot,
+            ThirdPersonCamera playerCamera,
+            Camera aimCamera,
+            Slider playerHpSlider,
+            TMP_Text playerAmmoText)
         {
+            if (root == null) return false;
+
+            ResolveRuntimeReferences();
+            SetTagSafely(root, isPlayer ? "Player" : "Enemy");
+            DisableOldGameSceneSystems();
+            if (root.transform.Find("Dog_001_rig") != null && root.TryGetComponent(out Animator dogAnimator))
+            {
+                dogAnimator.enabled = false;
+            }
+
             if (ai != null && isPlayer)
             {
                 ai.enabled = false;
@@ -159,7 +189,31 @@ public class MinimulAnimalControl : MonoBehaviour
                 shooter.SetInputEnabled(isPlayer);
                 if (isPlayer)
                 {
-                    shooter.BindPlayerStatus(root != null ? root.GetComponent<PlayerStatus>() : null);
+                    shooter.BindPlayerStatus(playerStatus);
+                }
+                else
+                {
+                    shooter.BindPlayerStatus(null);
+                }
+            }
+
+            if (playerStatus != null)
+            {
+                playerStatus.enabled = isPlayer;
+                if (isPlayer)
+                {
+                    playerStatus.BindUI(playerHpSlider, playerAmmoText);
+                }
+            }
+
+            if (enemyStatus != null)
+            {
+                enemyStatus.BindHPBar(enemyHpSlider, enemyHpBarRoot);
+                enemyStatus.enabled = !isPlayer;
+                enemyStatus.SetEnemyHPBarVisible(!isPlayer);
+                if (!isPlayer)
+                {
+                    enemyStatus.ResetEnemy();
                 }
             }
 
@@ -169,10 +223,59 @@ public class MinimulAnimalControl : MonoBehaviour
                 ai.enabled = true;
             }
 
-            EnemyAI enemyAI = root != null ? root.GetComponent<EnemyAI>() : null;
+            EnemyAI enemyAI = root.GetComponent<EnemyAI>();
             if (!isPlayer && enemyAI != null && playerRoot != null)
             {
                 enemyAI.BindPlayer(playerRoot);
+            }
+
+            return !isPlayer && enemyStatus != null;
+        }
+
+        private void ResolveRuntimeReferences()
+        {
+            if (root == null) return;
+
+            if (armAim == null) armAim = root.GetComponent<CameraArmAim>();
+            if (mover == null) mover = root.GetComponent<CreatureMover>();
+            if (input == null) input = root.GetComponent<MovePlayerInput>();
+            if (shooter == null) shooter = root.GetComponent<MinimulMuzzleShooter>();
+            if (ai == null) ai = root.GetComponent<MinimulNavMeshAnimalAI>();
+            if (navMeshAgent == null) navMeshAgent = root.GetComponent<NavMeshAgent>();
+            if (playerStatus == null) playerStatus = root.GetComponent<PlayerStatus>();
+            if (enemyStatus == null) enemyStatus = root.GetComponent<EnemyStatus>();
+        }
+
+        private void DisableOldGameSceneSystems()
+        {
+            if (root == null) return;
+
+            foreach (EnemyAI oldAi in root.GetComponentsInChildren<EnemyAI>(true))
+            {
+                oldAi.enabled = false;
+            }
+
+            foreach (EnemyTerrainRoamer roamer in root.GetComponentsInChildren<EnemyTerrainRoamer>(true))
+            {
+                roamer.SetActiveRoaming(false);
+                roamer.enabled = false;
+            }
+
+            foreach (DogRpgShooter oldShooter in root.GetComponentsInChildren<DogRpgShooter>(true))
+            {
+                oldShooter.enabled = false;
+            }
+        }
+
+        private static void SetTagSafely(GameObject target, string tagName)
+        {
+            try
+            {
+                target.tag = tagName;
+            }
+            catch (UnityException)
+            {
+                Debug.LogWarning($"Tag '{tagName}' is missing. Add it in Project Settings > Tags and Layers.", target);
             }
         }
     }

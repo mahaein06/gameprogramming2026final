@@ -111,6 +111,7 @@ public class MinimulMuzzleShooter : MonoBehaviour
     {
         Vector3 direction = muzzle.forward.sqrMagnitude > 0.0001f ? muzzle.forward.normalized : transform.forward;
         GameObject bullet = Instantiate(bulletPrefab, muzzle.position + direction * muzzleOffset, muzzle.rotation);
+        SetTagSafely(bullet, "Bullet");
 
         Rigidbody bulletRigidbody = bullet.GetComponent<Rigidbody>();
         bulletRigidbody.isKinematic = false;
@@ -143,6 +144,18 @@ public class MinimulMuzzleShooter : MonoBehaviour
             {
                 Physics.IgnoreCollision(bulletCollider, ownerCollider);
             }
+        }
+    }
+
+    private static void SetTagSafely(GameObject target, string tagName)
+    {
+        try
+        {
+            target.tag = tagName;
+        }
+        catch (UnityException)
+        {
+            Debug.LogWarning($"Tag '{tagName}' is missing. Add it in Project Settings > Tags and Layers.", target);
         }
     }
 
