@@ -113,8 +113,8 @@ public static class GameSceneForestPainter
         settings.clusterCount = 7;
         settings.minTreeSpacing = 8f;
         settings.terrainEdgeMargin = 5f;
-        settings.houseAvoidRadius = 11f;
-        settings.animalStartAvoidRadius = 6f;
+        settings.houseAvoidRadius = 7f;
+        settings.animalStartAvoidRadius = 3f;
         settings.minHeightScale = 0.55f;
         settings.maxHeightScale = 0.9f;
         settings.minWidthScale = 0.55f;
@@ -325,6 +325,7 @@ public static class GameSceneForestPainter
         return false;
     }
 }
+
 
 
 

@@ -2754,8 +2754,8 @@ MonoBehaviour:
   clusterCount: 7
   minTreeSpacing: 8
   terrainEdgeMargin: 5
-  houseAvoidRadius: 11
-  animalStartAvoidRadius: 6
+  houseAvoidRadius: 7
+  animalStartAvoidRadius: 3
   minHeightScale: 0.55
   maxHeightScale: 0.9
   minWidthScale: 0.55

@@ -10,8 +10,8 @@ public class GameSceneForestSettings : MonoBehaviour
     [Header("Spacing")]
     public float minTreeSpacing = 8f;
     public float terrainEdgeMargin = 5f;
-    public float houseAvoidRadius = 11f;
-    public float animalStartAvoidRadius = 6f;
+    public float houseAvoidRadius = 7f;
+    public float animalStartAvoidRadius = 3f;
 
     [Header("Tree Scale")]
     public float minHeightScale = 0.55f;
@@ -23,4 +23,5 @@ public class GameSceneForestSettings : MonoBehaviour
     public float nearAnimalRadius = 22f;
     public float nearAnimalMaxHeightScale = 0.7f;
 }
+
 
