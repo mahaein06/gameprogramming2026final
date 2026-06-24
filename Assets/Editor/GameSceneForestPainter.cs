@@ -109,12 +109,12 @@ public static class GameSceneForestPainter
         }
 
         settings.seed = 20260624;
-        settings.targetTreeCount = 130;
-        settings.clusterCount = 7;
-        settings.minTreeSpacing = 8f;
+        settings.targetTreeCount = 180;
+        settings.clusterCount = 9;
+        settings.minTreeSpacing = 6.5f;
         settings.terrainEdgeMargin = 5f;
-        settings.houseAvoidRadius = 7f;
-        settings.animalStartAvoidRadius = 3f;
+        settings.houseAvoidRadius = 6f;
+        settings.animalStartAvoidRadius = 1f;
         settings.minHeightScale = 0.55f;
         settings.maxHeightScale = 0.9f;
         settings.minWidthScale = 0.55f;
@@ -325,6 +325,7 @@ public static class GameSceneForestPainter
         return false;
     }
 }
+
 
 
 
