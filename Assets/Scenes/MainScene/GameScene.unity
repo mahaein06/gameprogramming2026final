@@ -2750,16 +2750,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameSceneForestSettings
   seed: 20260624
-  targetTreeCount: 90
-  clusterCount: 6
+  targetTreeCount: 130
+  clusterCount: 7
   minTreeSpacing: 8
   terrainEdgeMargin: 5
-  houseAvoidRadius: 18
-  animalStartAvoidRadius: 10
+  houseAvoidRadius: 11
+  animalStartAvoidRadius: 6
   minHeightScale: 0.55
   maxHeightScale: 0.9
-  minWidthScale: 0.75
-  maxWidthScale: 1.05
+  minWidthScale: 0.55
+  maxWidthScale: 0.9
   nearAnimalRadius: 22
   nearAnimalMaxHeightScale: 0.7
 --- !u!4 &688732199

@@ -108,6 +108,20 @@ public static class GameSceneForestPainter
             settings = settingsObject.AddComponent<GameSceneForestSettings>();
         }
 
+        settings.seed = 20260624;
+        settings.targetTreeCount = 130;
+        settings.clusterCount = 7;
+        settings.minTreeSpacing = 8f;
+        settings.terrainEdgeMargin = 5f;
+        settings.houseAvoidRadius = 11f;
+        settings.animalStartAvoidRadius = 6f;
+        settings.minHeightScale = 0.55f;
+        settings.maxHeightScale = 0.9f;
+        settings.minWidthScale = 0.55f;
+        settings.maxWidthScale = 0.9f;
+        settings.nearAnimalRadius = 22f;
+        settings.nearAnimalMaxHeightScale = 0.7f;
+
         EditorUtility.SetDirty(settingsObject);
         return settings;
     }
@@ -260,7 +274,7 @@ public static class GameSceneForestPainter
         {
             position = normalized,
             prototypeIndex = prototypeIndex,
-            widthScale = Random.Range(settings.minWidthScale, settings.maxWidthScale),
+            widthScale = heightScale,
             heightScale = heightScale,
             color = Color.white,
             lightmapColor = Color.white,
@@ -311,4 +325,6 @@ public static class GameSceneForestPainter
         return false;
     }
 }
+
+
 
