@@ -1,4 +1,4 @@
-﻿using ithappy.Animals_FREE;
+using ithappy.Animals_FREE;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
@@ -26,7 +26,6 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     {
         if (scene.name != GameSceneName) return;
 
-        GameSceneNavMeshBaker.EnsureRuntimeNavMesh();
 
         DisableDuplicateAnimalRoots();
 
@@ -41,9 +40,13 @@ public class GameSceneCharacterInitializer : MonoBehaviour
             if (root == null) continue;
 
             bool isPlayer = animal == selected;
+            LockCurrentY(root, animal);
+            ConfigureVisualGrounding(root, animal);
+            ConfigureTigerAnimator(root, animal);
             SetTagSafely(root, isPlayer ? PlayerTag : EnemyTag);
             ConfigureMovementComponents(root, isPlayer);
             ConfigureHorseFrontLegStabilizer(root, animal);
+            ConfigureKittyLegStabilizer(root, animal);
             ConfigureInput(root, selectedCamera, isPlayer);
             PlayerStatus status = ConfigurePlayerStatus(root, isPlayer);
             ConfigureShooter(root, status, selectedCamera, isPlayer);
@@ -53,6 +56,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
                 enemyCount++;
             }
             ConfigureEnemyAI(root, selectedRoot, isPlayer);
+            ConfigureEnemyTerrainRoamer(root, isPlayer);
         }
 
         EnemyKillTracker.InitializeForScene(enemyCount);
@@ -254,26 +258,65 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     }
 
 
+    private static void LockCurrentY(GameObject root, SelectableAnimal animal)
+    {
+        if (root == null) return;
+
+        GameObject lockTarget = GetYLockTarget(root, animal);
+        var yLock = lockTarget.GetComponent<FixedYPosition>();
+        if (yLock == null)
+        {
+            yLock = lockTarget.AddComponent<FixedYPosition>();
+        }
+
+        yLock.CaptureCurrentY();
+    }
+
+    private static GameObject GetYLockTarget(GameObject root, SelectableAnimal animal)
+    {
+        if (root == null) return null;
+        if (animal != SelectableAnimal.Tiger) return root;
+
+        var tigerModel = root.GetComponentInChildren<CreatureMover>(true);
+        return tigerModel != null ? tigerModel.gameObject : root;
+    }
+    private static void ConfigureVisualGrounding(GameObject root, SelectableAnimal animal)
+    {
+        if (root == null) return;
+
+        var snapper = root.GetComponent<VisualGroundSnapper>();
+        if (snapper != null)
+        {
+            snapper.enabled = false;
+        }
+    }
+    private static void ConfigureTigerAnimator(GameObject root, SelectableAnimal animal)
+    {
+        if (root == null || animal != SelectableAnimal.Tiger) return;
+
+        foreach (Animator animator in root.GetComponentsInChildren<Animator>(true))
+        {
+            animator.applyRootMotion = false;
+            animator.enabled = false;
+        }
+    }
     private static void ConfigureMovementComponents(GameObject root, bool isPlayer)
     {
         if (root == null) return;
 
-        var controller = root.GetComponent<CharacterController>();
-        if (controller != null)
+        foreach (var agent in root.GetComponentsInChildren<NavMeshAgent>(true))
+        {
+            agent.enabled = false;
+        }
+
+        foreach (var controller in root.GetComponentsInChildren<CharacterController>(true))
         {
             controller.enabled = isPlayer;
         }
 
-        var mover = root.GetComponent<CreatureMover>();
-        if (mover != null)
+        foreach (var mover in root.GetComponentsInChildren<CreatureMover>(true))
         {
             mover.enabled = isPlayer;
-        }
-
-        var agent = root.GetComponent<NavMeshAgent>();
-        if (agent != null && isPlayer)
-        {
-            agent.enabled = false;
         }
     }
     private static void ConfigureHorseFrontLegStabilizer(GameObject root, SelectableAnimal animal)
@@ -284,6 +327,33 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         {
             root.AddComponent<HorseFrontLegStabilizer>();
         }
+    }
+    private static void ConfigureKittyLegStabilizer(GameObject root, SelectableAnimal animal)
+    {
+        if (animal != SelectableAnimal.Horse || root == null) return;
+
+        var kittyRoot = FindChildByName(root.transform, "Kitty_001") ?? FindChildByName(root.transform, "Kitty");
+        GameObject target = kittyRoot != null ? kittyRoot.gameObject : root;
+
+        if (target.GetComponent<KittyLegStabilizer>() == null)
+        {
+            target.AddComponent<KittyLegStabilizer>();
+        }
+    }
+
+    private static Transform FindChildByName(Transform root, string childName)
+    {
+        if (root == null) return null;
+
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name == childName)
+            {
+                return child;
+            }
+        }
+
+        return null;
     }
     private static void ConfigureInput(GameObject root, ThirdPersonCamera camera, bool isPlayer)
     {
@@ -310,7 +380,7 @@ public class GameSceneCharacterInitializer : MonoBehaviour
 
         if (playerInput != null && isPlayer)
         {
-            playerInput.BindMover(root.GetComponent<CreatureMover>());
+            playerInput.BindMover(GetRoamerTarget(root).GetComponent<CreatureMover>());
             playerInput.BindCamera(camera);
         }
     }
@@ -387,78 +457,52 @@ public class GameSceneCharacterInitializer : MonoBehaviour
     }
     private static void ConfigureEnemyAI(GameObject root, GameObject playerRoot, bool isPlayer)
     {
-        var ai = root.GetComponent<EnemyAI>();
-        var agent = root.GetComponent<NavMeshAgent>();
+        if (root == null) return;
 
-        if (isPlayer)
+        foreach (var ai in root.GetComponentsInChildren<EnemyAI>(true))
         {
-            if (ai != null)
-            {
-                ai.enabled = false;
-            }
-
-            if (agent != null)
-            {
-                agent.enabled = false;
-            }
-
-            return;
+            ai.enabled = false;
         }
 
-        if (agent == null)
-        {
-            agent = root.AddComponent<NavMeshAgent>();
-        }
-
-        agent.enabled = true;
-        agent.updatePosition = true;
-        agent.updateRotation = true;
-        agent.speed = Mathf.Max(agent.speed, 3.5f);
-        agent.angularSpeed = Mathf.Max(agent.angularSpeed, 360f);
-        agent.acceleration = Mathf.Max(agent.acceleration, 12f);
-        agent.stoppingDistance = Mathf.Max(agent.stoppingDistance, 2.5f);
-
-        if (!TryPlaceAgentOnNavMesh(root, agent, 8f, 0.75f))
+        foreach (var agent in root.GetComponentsInChildren<NavMeshAgent>(true))
         {
             agent.enabled = false;
-            return;
-        }
-
-        if (ai == null)
-        {
-            ai = root.AddComponent<EnemyAI>();
-        }
-
-        ai.enabled = true;
-        if (playerRoot != null)
-        {
-            ai.BindPlayer(playerRoot.transform);
         }
     }
-    private static bool TryPlaceAgentOnNavMesh(GameObject root, NavMeshAgent agent, float maxDistance, float maxHorizontalShift)
+    private static void ConfigureEnemyTerrainRoamer(GameObject root, bool isPlayer)
     {
-        if (root == null || agent == null) return false;
-        if (agent.isOnNavMesh) return true;
+        if (root == null) return;
 
-        Vector3 originalPosition = root.transform.position;
-        Quaternion originalRotation = root.transform.rotation;
-        if (!NavMesh.SamplePosition(originalPosition, out NavMeshHit hit, maxDistance, NavMesh.AllAreas))
+        GameObject model = GetRoamerTarget(root);
+        foreach (var existingRoamer in root.GetComponentsInChildren<EnemyTerrainRoamer>(true))
         {
-            Debug.LogWarning($"Enemy '{root.name}' is too far from the NavMesh. Move it onto baked terrain in the Scene view.", root);
-            return false;
+            if (existingRoamer == null) continue;
+            if (isPlayer || existingRoamer.gameObject != model)
+            {
+                existingRoamer.SetActiveRoaming(false);
+            }
         }
 
-        Vector2 horizontalShift = new Vector2(hit.position.x - originalPosition.x, hit.position.z - originalPosition.z);
-        if (horizontalShift.magnitude > maxHorizontalShift)
+        if (isPlayer || model == null) return;
+
+        var roamer = model.GetComponent<EnemyTerrainRoamer>();
+        if (roamer == null)
         {
-            Debug.LogWarning($"Enemy '{root.name}' is near a NavMesh, but the closest point is too far from its scene position. Move it closer to walkable terrain.", root);
-            return false;
+            roamer = model.AddComponent<EnemyTerrainRoamer>();
         }
 
-        agent.baseOffset = originalPosition.y - hit.position.y;
-        bool warped = agent.Warp(hit.position);
-        root.transform.rotation = originalRotation;
-        return warped && agent.isOnNavMesh;
+        roamer.SetActiveRoaming(true);
+    }
+
+    private static GameObject GetRoamerTarget(GameObject root)
+    {
+        if (root == null) return null;
+
+        var rootMover = root.GetComponent<CreatureMover>();
+        if (rootMover != null) return root;
+
+        var childMover = root.GetComponentInChildren<CreatureMover>(true);
+        return childMover != null ? childMover.gameObject : root;
     }
     private static void SetTagSafely(GameObject root, string tagName)
     {
@@ -472,6 +516,18 @@ public class GameSceneCharacterInitializer : MonoBehaviour
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

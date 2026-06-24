@@ -33,7 +33,6 @@ public static class GameSceneEnemySetupEditor
 
             changed |= EnsureComponent<EnemyStatus>(root) != null;
             changed |= EnsureComponent<EnemyAI>(root) != null;
-            changed |= EnsureComponent<NavMeshAgent>(root) != null;
 
             EnemyStatus status = root.GetComponent<EnemyStatus>();
             if (status != null)
@@ -80,6 +79,7 @@ public static class GameSceneEnemySetupEditor
     }
 }
 #endif
+
 
 
 
