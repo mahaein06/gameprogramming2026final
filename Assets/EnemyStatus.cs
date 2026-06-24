@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
@@ -21,6 +21,7 @@ public class EnemyStatus : MonoBehaviour
     [SerializeField] private Slider hpSlider;
     [SerializeField] private GameObject hpBarRoot;
     private Renderer[] renderers;
+    private Transform playerTransform;
     private bool isDead;
     private bool warnedMissingHPBar;
 
@@ -432,11 +433,28 @@ public class EnemyStatus : MonoBehaviour
 
         if (!Application.isPlaying) return;
 
-        Camera camera = Camera.main;
-        if (camera != null)
+        Transform player = GetPlayerTransform();
+        if (player == null) return;
+
+        Vector3 direction = hpBarRoot.transform.position - player.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f) return;
+
+        float targetY = Quaternion.LookRotation(direction.normalized, Vector3.up).eulerAngles.y;
+        Vector3 currentEuler = hpBarRoot.transform.eulerAngles;
+        hpBarRoot.transform.eulerAngles = new Vector3(currentEuler.x, targetY, currentEuler.z);
+    }
+
+    private Transform GetPlayerTransform()
+    {
+        if (playerTransform != null && playerTransform.gameObject.activeInHierarchy)
         {
-            hpBarRoot.transform.rotation = Quaternion.LookRotation(hpBarRoot.transform.position - camera.transform.position, Vector3.up);
+            return playerTransform;
         }
+
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        playerTransform = playerObject != null ? playerObject.transform : null;
+        return playerTransform;
     }
     private void SetHPBarVisible(bool visible)
     {
