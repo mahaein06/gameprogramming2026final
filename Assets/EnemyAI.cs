@@ -30,6 +30,7 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float muzzleOffset = 0.25f;
     [SerializeField] private GameObject bulletPrefab;
     [SerializeField] private Transform firePoint;
+    [SerializeField] private MinimulMuzzleShooter muzzleShooter;
     [SerializeField] private bool rotateWeaponToAim = true;
     [SerializeField] private bool restoreWeaponOutsideAttack = true;
 
@@ -78,9 +79,17 @@ public class EnemyAI : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         ownerColliders = GetComponentsInChildren<Collider>(true);
         currentAmmo = Mathf.Max(0, startAmmo);
-        EnsureBulletPrefab();
-        EnsureFirePoint();
-        CacheMuzzleRotationOffset();
+        if (muzzleShooter == null)
+        {
+            TryGetComponent(out muzzleShooter);
+        }
+
+        if (muzzleShooter == null)
+        {
+            EnsureBulletPrefab();
+            EnsureFirePoint();
+            CacheMuzzleRotationOffset();
+        }
     }
 
     private void OnEnable()
@@ -187,7 +196,11 @@ public class EnemyAI : MonoBehaviour
     {
         StopAgent();
         FacePlayer();
-        AimWeaponAtPlayer();
+        if (muzzleShooter == null)
+        {
+            AimWeaponAtPlayer();
+        }
+
         TryFire();
     }
 
@@ -244,6 +257,20 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
+        if (muzzleShooter != null)
+        {
+            if (muzzleShooter.FireEnemy(damage))
+            {
+                ConsumeShot();
+            }
+            else
+            {
+                ScheduleNextShot();
+            }
+
+            return;
+        }
+
         EnsureBulletPrefab();
         EnsureFirePoint();
         AimWeaponAtPlayer();
@@ -281,14 +308,23 @@ public class EnemyAI : MonoBehaviour
         bulletRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         bulletRigidbody.linearVelocity = fireDirection * bulletSpeed;
 
+        ConsumeShot();
+        Destroy(bullet, bulletLifeTime);
+    }
+
+    private void ConsumeShot()
+    {
         currentAmmo--;
-        nextFireTime = Time.time + Mathf.Max(0.05f, fireRate);
+        ScheduleNextShot();
         if (currentAmmo <= 0)
         {
             ScheduleReloadIfNeeded();
         }
+    }
 
-        Destroy(bullet, bulletLifeTime);
+    private void ScheduleNextShot()
+    {
+        nextFireTime = Time.time + Mathf.Max(0.05f, fireRate);
     }
 
     private void ScheduleReloadIfNeeded()

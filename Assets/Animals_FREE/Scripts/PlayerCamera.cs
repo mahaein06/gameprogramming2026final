@@ -33,7 +33,7 @@ namespace ithappy.Animals_FREE
         protected Vector2 m_Angles;
         protected float m_Distance;
 
-        public Vector3 Target => m_Target.position;
+        public Vector3 Target => m_Target != null ? m_Target.position : transform.position + transform.forward * TARGET_DISTANCE;
         public float TargetDistance => TARGET_DISTANCE;
 
         protected virtual void Awake()
@@ -47,7 +47,7 @@ namespace ithappy.Animals_FREE
             }
         }
 
-        public void BindPlayer(Transform player)
+        public virtual void BindPlayer(Transform player)
         {
             m_Player = player;
         }

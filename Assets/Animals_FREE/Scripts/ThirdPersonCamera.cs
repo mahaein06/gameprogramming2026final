@@ -13,44 +13,66 @@ namespace ithappy.Animals_FREE
 
         private Vector3 m_LookPoint;
         private Vector3 m_TargetPos;
-        private Vector3 m_LocalCameraOffset;
-        private Vector3 m_LocalLookPoint;
+        private float m_YawOffset;
 
         protected override void Awake()
         {
             base.Awake();
-            InitializeFromCurrentTransform();
+            InitializeFromCurrentTransform(true);
         }
 
         private void LateUpdate()
         {
+            UpdateOrbitPose();
             Move(Time.deltaTime);
+        }
+
+        public override void BindPlayer(Transform player)
+        {
+            base.BindPlayer(player);
+            InitializeFromCurrentTransform(true);
         }
 
         public void ReinitializeFromCurrentTransform()
         {
-            InitializeFromCurrentTransform();
+            InitializeFromCurrentTransform(true);
         }
 
-        private void InitializeFromCurrentTransform()
+        public void SetYawOffset(float yawOffset)
+        {
+            m_YawOffset = yawOffset;
+            UpdateOrbitPose();
+        }
+
+        private void InitializeFromCurrentTransform(bool snapToTarget)
         {
             if (m_Player == null)
             {
                 m_LookPoint = transform.position + transform.forward * TargetDistance;
                 m_TargetPos = transform.position;
+                UpdateTargetTransform();
                 return;
             }
 
             var pivot = GetWorldPivot();
-            m_LocalCameraOffset = m_Player.InverseTransformDirection(m_Transform.position - pivot);
-            m_LocalLookPoint = m_Player.InverseTransformPoint(m_Transform.position + m_Transform.forward * TargetDistance);
+            m_Distance = ZoomToDistance();
 
-            var fromPlayer = m_Transform.position - m_Player.position;
-            m_Distance = Mathf.Clamp(fromPlayer.magnitude, MIN_DISTANCE, MAX_DISTANCE);
-            m_Zoom = 1f - Mathf.InverseLerp(MIN_DISTANCE, MAX_DISTANCE, m_Distance);
+            if (m_UseSceneCameraPose)
+            {
+                var toCamera = m_Transform.position - pivot;
+                if (toCamera.sqrMagnitude > 0.0001f)
+                {
+                    var lookRotation = Quaternion.LookRotation(-toCamera.normalized, Vector3.up).eulerAngles;
+                    m_Angles = new Vector2(NormalizeAngle(lookRotation.x), NormalizeAngle(lookRotation.y + 90f - m_YawOffset));
+                    m_Angles.x = Mathf.Clamp(m_Angles.x, m_MinAngle, m_MaxAngle);
+                }
+            }
 
-            m_TargetPos = m_Transform.position;
-            m_LookPoint = m_Player.TransformPoint(m_LocalLookPoint);
+            UpdateOrbitPose();
+            if (snapToTarget)
+            {
+                SnapToTarget();
+            }
         }
 
         private Vector3 GetWorldPivot()
@@ -61,23 +83,38 @@ namespace ithappy.Animals_FREE
         public override void SetInput(in Vector2 delta, float scroll)
         {
             base.SetInput(delta, scroll);
+            UpdateOrbitPose();
+        }
 
-            if (m_UseSceneCameraPose && m_Player != null)
+        private float ZoomToDistance()
+        {
+            return (1f - Mathf.Clamp01(m_Zoom)) * (MAX_DISTANCE - MIN_DISTANCE) + MIN_DISTANCE;
+        }
+
+        private static float NormalizeAngle(float angle)
+        {
+            return Mathf.Repeat(angle + 180f, 360f) - 180f;
+        }
+
+        private void UpdateOrbitPose()
+        {
+            if (m_Player == null)
             {
-                var pivot = GetWorldPivot();
-                var pitch = Quaternion.AngleAxis(m_Angles.x, m_Player.right);
-                var cameraOffset = m_Player.TransformDirection(m_LocalCameraOffset);
-
-                m_TargetPos = pivot + pitch * cameraOffset;
-                m_LookPoint = pivot;
                 return;
             }
-            var dir = new Vector3(0, 0, -m_Distance);
-            var rot = Quaternion.Euler(m_Angles.x, m_Angles.y, 0f);
 
-            var playerPos = (m_Player == null) ? Vector3.zero : m_Player.position;
-            m_LookPoint = playerPos + m_Offset * Vector3.up;
+            var dir = new Vector3(0, 0, -m_Distance);
+            var rot = Quaternion.Euler(m_Angles.x, m_Angles.y + m_YawOffset, 0f);
+
+            m_LookPoint = GetWorldPivot();
             m_TargetPos = m_LookPoint + rot * dir;
+        }
+
+        private void SnapToTarget()
+        {
+            m_Transform.position = m_TargetPos;
+            LookAtTarget();
+            UpdateTargetTransform();
         }
 
         private void Move(float deltaTime)
@@ -99,17 +136,29 @@ namespace ithappy.Animals_FREE
                     m_Transform.position += delta * direction.normalized;
                 }
 
-                m_Transform.LookAt(m_LookPoint);
+                LookAtTarget();
             }
 
             void target()
             {
-                if (m_Target == null)
-                {
-                    return;
-                }
+                UpdateTargetTransform();
+            }
+        }
 
-                m_Target.position = m_Transform.position + m_Transform.forward * TargetDistance;
+        private void LookAtTarget()
+        {
+            var lookDirection = m_LookPoint - m_Transform.position;
+            if (lookDirection.sqrMagnitude > 0.0001f)
+            {
+                m_Transform.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
+            }
+        }
+
+        private void UpdateTargetTransform()
+        {
+            if (m_Target != null)
+            {
+                m_Target.position = m_LookPoint + m_Transform.forward * TargetDistance;
             }
         }
     }
