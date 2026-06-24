@@ -10,6 +10,7 @@ public static class GameSceneOuterWorldBuilder
     private const string ScenePath = "Assets/Scenes/MainScene/GameScene.unity";
     private const string OuterTerrainDataPath = "Assets/Scenes/MainScene/GameScene_OuterTerrain.asset";
     private const string FogMaterialPath = "Assets/Materials/BoundaryFog.mat";
+    private const string FogTexturePath = "Assets/Materials/BoundaryFogNoise.png";
 
     private static readonly string[] TreePrefabPaths =
     {
@@ -17,8 +18,7 @@ public static class GameSceneOuterWorldBuilder
         "Assets/Hand_Painted_Nature_Kit_LITE/Prefabs/Larch_Tree.prefab",
         "Assets/Hand_Painted_Nature_Kit_LITE/Prefabs/Cedar_Tree_03.prefab"
     };
-
-    public static void BuildOuterWorld()
+public static void BuildOuterWorld()
     {
         EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
 
@@ -61,7 +61,7 @@ public static class GameSceneOuterWorldBuilder
         Vector3 innerPos = innerTerrain.transform.position;
         Vector3 innerSize = innerData.size;
         Vector3 innerCenter = innerPos + new Vector3(innerSize.x * 0.5f, 0f, innerSize.z * 0.5f);
-        Vector3 outerSize = new Vector3(innerSize.x * 4f, innerSize.y, innerSize.z * 4f);
+        Vector3 outerSize = new Vector3(innerSize.x * 2f, innerSize.y, innerSize.z * 2f);
         Vector3 outerPos = new Vector3(innerCenter.x - outerSize.x * 0.5f, innerPos.y - 0.08f, innerCenter.z - outerSize.z * 0.5f);
 
         TerrainData outerData = AssetDatabase.LoadAssetAtPath<TerrainData>(OuterTerrainDataPath);
@@ -96,7 +96,7 @@ public static class GameSceneOuterWorldBuilder
             collider.terrainData = outerData;
 
         outerTerrain.drawInstanced = innerTerrain.drawInstanced;
-        outerTerrain.treeDistance = Mathf.Max(innerTerrain.treeDistance, 600f);
+        outerTerrain.treeDistance = Mathf.Max(innerTerrain.treeDistance, 450f);
         outerTerrain.detailObjectDistance = innerTerrain.detailObjectDistance;
         outerTerrain.transform.position = outerPos;
         outerTerrain.groupingID = innerTerrain.groupingID;
@@ -162,14 +162,14 @@ public static class GameSceneOuterWorldBuilder
         List<TreeInstance> trees = new List<TreeInstance>();
         List<Vector2> occupied = new List<Vector2>();
         Random.InitState(20260624 + 99);
-        int targetCount = 420;
-        float minSpacing = 10f;
-        int attempts = targetCount * 90;
+        int targetCount = 240;
+        float minSpacing = 7f;
+        int attempts = targetCount * 100;
 
         for (int i = 0; i < attempts && trees.Count < targetCount; i++)
         {
-            float x = Random.Range(outerPos.x + 10f, outerPos.x + outerSize.x - 10f);
-            float z = Random.Range(outerPos.z + 10f, outerPos.z + outerSize.z - 10f);
+            float x = Random.Range(outerPos.x + 8f, outerPos.x + outerSize.x - 8f);
+            float z = Random.Range(outerPos.z + 8f, outerPos.z + outerSize.z - 8f);
             if (innerRect.Contains(new Vector2(x, z)))
                 continue;
 
@@ -218,32 +218,44 @@ public static class GameSceneOuterWorldBuilder
         Material fogMaterial = GetOrCreateFogMaterial();
         Vector3 pos = innerTerrain.transform.position;
         Vector3 size = innerTerrain.terrainData.size;
-        float centerX = pos.x + size.x * 0.5f;
-        float centerZ = pos.z + size.z * 0.5f;
-        float y = pos.y + 4.2f;
-        float height = 8f;
-        float thickness = 7f;
+        float minX = pos.x;
+        float maxX = pos.x + size.x;
+        float minZ = pos.z;
+        float maxZ = pos.z + size.z;
+        float yBase = pos.y + 3.2f;
 
-        CreateFogBand(root.transform, "NorthFog", new Vector3(centerX, y, pos.z + size.z), new Vector3(size.x + thickness * 2f, height, thickness), fogMaterial);
-        CreateFogBand(root.transform, "SouthFog", new Vector3(centerX, y, pos.z), new Vector3(size.x + thickness * 2f, height, thickness), fogMaterial);
-        CreateFogBand(root.transform, "EastFog", new Vector3(pos.x + size.x, y, centerZ), new Vector3(thickness, height, size.z + thickness * 2f), fogMaterial);
-        CreateFogBand(root.transform, "WestFog", new Vector3(pos.x, y, centerZ), new Vector3(thickness, height, size.z + thickness * 2f), fogMaterial);
+        Random.InitState(20260624 + 404);
+        CreateFogSide(root.transform, fogMaterial, "North", minX, maxX, maxZ - 3f, maxZ + 11f, yBase, 34, 0f);
+        CreateFogSide(root.transform, fogMaterial, "South", minX, maxX, minZ - 11f, minZ + 3f, yBase, 34, 180f);
+        CreateFogSide(root.transform, fogMaterial, "East", maxX - 3f, maxX + 11f, minZ, maxZ, yBase, 34, -90f);
+        CreateFogSide(root.transform, fogMaterial, "West", minX - 11f, minX + 3f, minZ, maxZ, yBase, 34, 90f);
     }
 
-    private static void CreateFogBand(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
+    private static void CreateFogSide(Transform parent, Material material, string side, float minX, float maxX, float minZ, float maxZ, float yBase, int count, float baseYaw)
     {
-        GameObject band = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        band.name = name;
-        band.transform.SetParent(parent, false);
-        band.transform.position = position;
-        band.transform.localScale = scale;
-        Collider collider = band.GetComponent<Collider>();
-        if (collider != null)
-            Object.DestroyImmediate(collider);
+        for (int i = 0; i < count; i++)
+        {
+            float x = Random.Range(minX, maxX);
+            float z = Random.Range(minZ, maxZ);
+            float y = yBase + Random.Range(-0.8f, 3.4f);
+            float width = Random.Range(8f, 20f);
+            float height = Random.Range(3.5f, 9f);
+            float yaw = baseYaw + Random.Range(-24f, 24f);
 
-        MeshRenderer renderer = band.GetComponent<MeshRenderer>();
-        renderer.sharedMaterial = material;
-        band.isStatic = true;
+            GameObject puff = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            puff.name = side + "FogPuff_" + i.ToString("00");
+            puff.transform.SetParent(parent, false);
+            puff.transform.position = new Vector3(x, y, z);
+            puff.transform.rotation = Quaternion.Euler(Random.Range(-5f, 5f), yaw, Random.Range(-8f, 8f));
+            puff.transform.localScale = new Vector3(width, height, 1f);
+            Collider collider = puff.GetComponent<Collider>();
+            if (collider != null)
+                Object.DestroyImmediate(collider);
+
+            MeshRenderer renderer = puff.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            puff.isStatic = true;
+        }
     }
 
     private static void CreateBoundaryWalls(Terrain innerTerrain)
@@ -285,27 +297,72 @@ public static class GameSceneOuterWorldBuilder
     private static Material GetOrCreateFogMaterial()
     {
         Directory.CreateDirectory("Assets/Materials");
+        Texture2D fogTexture = GetOrCreateFogTexture();
         Material material = AssetDatabase.LoadAssetAtPath<Material>(FogMaterialPath);
         if (material == null)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null)
-                shader = Shader.Find("Unlit/Color");
+                shader = Shader.Find("Unlit/Transparent");
             material = new Material(shader);
             AssetDatabase.CreateAsset(material, FogMaterialPath);
         }
 
+        Color fogColor = new Color(0.72f, 0.78f, 0.82f, 0.34f);
         material.name = "BoundaryFog";
-        material.SetColor("_BaseColor", new Color(0.72f, 0.78f, 0.82f, 0.38f));
-        material.SetColor("_Color", new Color(0.72f, 0.78f, 0.82f, 0.38f));
+        material.SetTexture("_BaseMap", fogTexture);
+        material.SetTexture("_MainTex", fogTexture);
+        material.SetColor("_BaseColor", fogColor);
+        material.SetColor("_Color", fogColor);
         material.SetFloat("_Surface", 1f);
         material.SetFloat("_Blend", 0f);
         material.SetFloat("_AlphaClip", 0f);
+        material.SetFloat("_Cull", 0f);
+        material.SetFloat("_ZWrite", 0f);
         material.renderQueue = 3000;
         material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-        material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
         EditorUtility.SetDirty(material);
         return material;
+    }
+
+    private static Texture2D GetOrCreateFogTexture()
+    {
+        Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(FogTexturePath);
+        if (texture != null)
+            return texture;
+
+        const int size = 256;
+        Texture2D generated = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        Vector2 center = new Vector2(size * 0.5f, size * 0.5f);
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                Vector2 p = new Vector2(x, y);
+                float radial = 1f - Mathf.Clamp01(Vector2.Distance(p, center) / (size * 0.48f));
+                float n1 = Mathf.PerlinNoise(x * 0.025f, y * 0.025f);
+                float n2 = Mathf.PerlinNoise(30f + x * 0.055f, 80f + y * 0.055f);
+                float alpha = Mathf.Clamp01(Mathf.Pow(radial, 0.7f) * (0.35f + n1 * 0.45f + n2 * 0.2f));
+                alpha = Mathf.SmoothStep(0f, 1f, alpha);
+                generated.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+
+        generated.Apply();
+        File.WriteAllBytes(FogTexturePath, generated.EncodeToPNG());
+        Object.DestroyImmediate(generated);
+        AssetDatabase.ImportAsset(FogTexturePath);
+        TextureImporter importer = AssetImporter.GetAtPath(FogTexturePath) as TextureImporter;
+        if (importer != null)
+        {
+            importer.textureType = TextureImporterType.Default;
+            importer.alphaSource = TextureImporterAlphaSource.FromInput;
+            importer.alphaIsTransparency = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.SaveAndReimport();
+        }
+
+        return AssetDatabase.LoadAssetAtPath<Texture2D>(FogTexturePath);
     }
 
     private static void ConfigureRenderFog()
@@ -313,7 +370,8 @@ public static class GameSceneOuterWorldBuilder
         RenderSettings.fog = true;
         RenderSettings.fogColor = new Color(0.66f, 0.74f, 0.78f, 1f);
         RenderSettings.fogMode = FogMode.ExponentialSquared;
-        RenderSettings.fogDensity = 0.012f;
+        RenderSettings.fogDensity = 0.008f;
     }
 }
+
 
