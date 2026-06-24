@@ -7626,7 +7626,7 @@ Transform:
   m_GameObject: {fileID: 901503747}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 50, y: 1.8918804, z: 50}
+  m_LocalPosition: {x: 50, y: 1.8918805, z: 50}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -13191,6 +13191,10 @@ PrefabInstance:
       objectReference: {fileID: 1365166831}
     - target: {fileID: 5784970979216008207, guid: 59f856f6b0cd7f44f889736977d9d9bf, type: 3}
       propertyPath: consumePlayerAmmo
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5945079961475670630, guid: 59f856f6b0cd7f44f889736977d9d9bf, type: 3}
+      propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8056061357785937590, guid: 59f856f6b0cd7f44f889736977d9d9bf, type: 3}
