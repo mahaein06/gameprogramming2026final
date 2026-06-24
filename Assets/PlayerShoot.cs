@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -21,7 +21,7 @@ public class PlayerShoot : MonoBehaviour
     {
         if (!WasLeftClickPressed()) return;
 
-        if (DialogueManager.Instance != null && DialogueManager.Instance.IsTalking())
+        if (DialogueManager.Instance != null && DialogueManager.Instance.ShouldBlockFireInput())
         {
             return;
         }

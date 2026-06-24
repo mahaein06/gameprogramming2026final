@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -80,7 +80,7 @@ namespace ithappy.Animals_FREE
         {
             if (!WasFirePressed()) return;
 
-            if (DialogueManager.Instance != null && DialogueManager.Instance.IsTalking())
+            if (DialogueManager.Instance != null && DialogueManager.Instance.ShouldBlockFireInput())
             {
                 return;
             }

@@ -1,4 +1,4 @@
-﻿using TMPro;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 #if UNITY_EDITOR
@@ -43,6 +43,7 @@ public class DialogueManager : MonoBehaviour
     private bool canCloseWithClick;
     private bool promptCanInteract;
     private bool waitForClickRelease;
+    private int blockFireInputFrame = -1;
     private RectTransform fPromptRect;
     private Canvas fPromptWorldCanvas;
 
@@ -131,18 +132,21 @@ public class DialogueManager : MonoBehaviour
 
         if (waitingForChoiceLine && WasAdvancePressed())
         {
+            BlockFireInputThisFrame();
             ShowChoiceLine();
             return;
         }
 
         if (waitingForChoiceReveal && WasAdvancePressed())
         {
+            BlockFireInputThisFrame();
             ShowChoices();
             return;
         }
 
         if (canCloseWithClick && WasAdvancePressed())
         {
+            BlockFireInputThisFrame();
             EndDialogue();
         }
     }
@@ -152,6 +156,15 @@ public class DialogueManager : MonoBehaviour
         return isTalking;
     }
 
+    public bool ShouldBlockFireInput()
+    {
+        return isTalking || Time.frameCount <= blockFireInputFrame;
+    }
+
+    private void BlockFireInputThisFrame()
+    {
+        blockFireInputFrame = Time.frameCount;
+    }
     public void BindPlayerStatus(PlayerStatus status)
     {
         playerStatus = status;
